@@ -65,7 +65,7 @@
     <Tooltip tip="default minecraft launcher" top><button on:click={(e) => {select(e)}} id="default"><img src="./mc_logo.png" alt="default" /></button></Tooltip>
     <Tooltip tip="curseforge launcher" top><button on:click={(e) => {select(e)}} id="curseforge"><img src="./curseforge.png" alt="curseforge" /></button></Tooltip>
     <Tooltip tip="prism launcher" top><button on:click={(e) => {select(e)}} id="prism"><img src="./prism.png" alt="prism" /></button></Tooltip>
-    <Tooltip tip="custom/any" top><button on:click={(e) => {select(e)}} id="custom"><img src="./prism.png" alt="prism" /></button></Tooltip>
+    <Tooltip tip="custom/any" top><button on:click={(e) => {select(e)}} id="custom" style="transform: translateY(0.6em);"><img src="./custom.png" alt="prism" style="transform: translateY(0.3em);"/></button></Tooltip>
   </div>
   {#if selected != "custom" && selected != undefined}
     <button on:click={(e) => init(e)} class="confirmButton bottomEl">confirm selection</button>
