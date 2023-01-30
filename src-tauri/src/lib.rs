@@ -31,7 +31,7 @@ impl LauncherPath { // bunch of path declarations
     pub fn curseforge() -> PathBuf { return PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Overwolf\OverwolfLauncher.exe") }
     pub fn curseforge_instance() -> PathBuf { return PathBuf::from(var("USERPROFILE").unwrap()).join(r"curseforge\minecraft\Instances\ahms") }
     pub fn prism() -> PathBuf { return PathBuf::from(var("LOCALAPPDATA").unwrap()).join(r"Programs\PrismLauncher\prismlauncher.exe") }
-    pub fn prism_instance() -> PathBuf { return PathBuf::from(var("APPDATA").unwrap()).join(r"PrismLauncher\instances\ahms") }
+    pub fn prism_instance() -> PathBuf { return PathBuf::from(var("APPDATA").unwrap()).join(r"PrismLauncher\instances\ahms\.minecraft") }
 }
 
 
@@ -61,6 +61,10 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
         if !path.join("minecraftinstance.json").exists() {
             resolve_lconfigs(&path, launcher, &app).await;
         }
+    } else if launcher == "prism" {
+        let prism_main = &mut path.clone();
+        prism_main.pop();
+        resolve_lconfigs(&prism_main, launcher, &app).await;
     }
 
     update_status("cleaning up", &app);
@@ -120,13 +124,13 @@ async fn resolve_lconfigs(path: &PathBuf, ltype: String, app: &tauri::AppHandle)
         fs::remove_file(path.join("curseforge.zip")).expect("could not clean up");
     } else if ltype == "prism" {
         update_status("downloading prism configs", &app);
-        download_file(&Client::new(), "AAAAAAAA", path.join("prism.zip").to_str().unwrap(), &app, false).await.unwrap();
+        download_file(&Client::new(), "https://drive.google.com/uc?export=download&id=18r_C-tvMEjcbBUA8TqApOXMkqaR_XFrs&confirm=t", path.join("prism.zip").to_str().unwrap(), &app, false).await.unwrap();
         update_progress(90, &app);
 
         update_status("extracting configs", &app);
         zip_extract(&path.join("prism.zip"), &path).expect("Could not extract zip file");
         update_progress(95, &app);
-        fs::remove_file(path.join("curseforge.zip")).expect("could not clean up");
+        fs::remove_file(path.join("prism.zip")).expect("could not clean up");
     }
 }
 
