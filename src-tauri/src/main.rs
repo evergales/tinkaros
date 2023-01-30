@@ -53,6 +53,11 @@ fn get_config() -> AppConfig {
 
 #[tauri::command]
 fn init(chosen: &str, path: &str, custom: bool) {
+  let mut _path = path;
+  let _p = PathBuf::from(var("APPDATA").unwrap()).join(r"ahms\game");
+  if _path == "" {
+    _path = _p.to_str().unwrap()
+  }
   let mut config = path::app_config_dir(&Config::default()).expect("Couldnt load config");
   config.push("ahms/config.toml");
   if !config.is_file() {
@@ -64,9 +69,9 @@ fn init(chosen: &str, path: &str, custom: bool) {
 
   confs.init = true;
   confs.launcher = chosen.to_string();
-  confs.path = path.to_string();
+  confs.path = _path.to_string();
   confs.custom = custom;
-  resolve(&PathBuf::from(path));
+  resolve(&PathBuf::from(_path));
 
 
   let toml_string = toml::to_string(&confs).expect("unable to convert back to toml");

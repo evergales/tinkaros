@@ -37,7 +37,7 @@
     chosen: selected == "custom" ?
       customSelected: selected,
     path: selected == "custom" ?
-      path : launchers.find((i) => i.name == selected).path,
+      !path ? "" : path : launchers.find((i) => i.name == selected).path,
     custom: selected == "custom" ?
       true : false
   })
