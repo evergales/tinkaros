@@ -55,7 +55,7 @@ fn get_config() -> AppConfig {
 fn init(chosen: &str, path: &str, custom: bool) {
   let mut _path = path;
   let _p = PathBuf::from(var("APPDATA").unwrap()).join(r"ahms\game");
-  if _path == "" {
+  if _path.is_empty() {
     _path = _p.to_str().unwrap()
   }
   let mut config = path::app_config_dir(&Config::default()).expect("Couldnt load config");
@@ -142,14 +142,14 @@ async fn log_update(path: String) {
 async fn get_version(path: String) -> VersionRes {
   let file = PathBuf::from(path).join("version.toml");
   let latest = reqwest::get("https://raw.githubusercontent.com/Hbarniq/ahms/main/VERSION").await.unwrap().text().await.unwrap();
-  let res = if file.exists() {
+  
+  if file.exists() {
     let str_file = fs::read_to_string(&file).expect("unable to read config");
     let file_data: VersionFile = toml::from_str(&str_file).unwrap_or_default();
     VersionRes { version: file_data.version, latest_version: latest, last_updated: file_data.last_updated }
   } else {
     VersionRes { version: "not installed".to_string(), latest_version: latest, last_updated: 0 }
-  };
-  res
+  }
 }
 
 #[tauri::command]
