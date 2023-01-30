@@ -1,4 +1,4 @@
-use std::{path::PathBuf, fs, env::{self, var}};
+use std::{path::PathBuf, fs::{self, canonicalize}, env::{self, var}};
 
 use fs_extra::dir::CopyOptions;
 use futures_util::StreamExt;
@@ -70,6 +70,10 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
     update_status("cleaning up", &app);
     fs::remove_dir_all(path.join("versions")).ok();
     fs::remove_file(path.join("mcmods.zip")).ok();
+    if !path.join("updater_log.txt").exists() {
+        let exe_path = canonicalize(PathBuf::from("./")).unwrap().to_string_lossy().to_string();
+        fs::write(path.join("updater_loc.txt"), exe_path.replace(r"\\?\", "") + r"\mci-reloaded.exe").unwrap();
+    }
 }
 
 pub fn update_status(msg: &str, app: &tauri::AppHandle) {
@@ -85,7 +89,6 @@ pub async fn update_files(path: &PathBuf, app: &tauri::AppHandle) {
     let downloadurl = "https://drive.google.com/uc?export=download&id=1qa7gThngkqNooUweuyVs6Kes8w_pIJ0l&confirm=t";
     let update: bool = path.join("mods").exists();
     let emptydir: bool = if update == false && fs::read_dir(path).unwrap().count() == 0 {true} else {false};
-
     let raw_mczip = if update == false && emptydir == false { _path.join("modpack/mcmods.zip") } else {path.join("./mcmods.zip")};
     let mcmodszip = raw_mczip.to_str().unwrap();
     let raw_modsdir = if update == false && emptydir == false { path.join("modpack")} else { path.to_path_buf() };
@@ -94,9 +97,8 @@ pub async fn update_files(path: &PathBuf, app: &tauri::AppHandle) {
         if emptydir == false {fs::create_dir(&mods_dir).ok();}
     } else {
         update_status("removing old data", &app);
-        fs::remove_dir_all(format!("{}mods", mods_dir)).unwrap_or_else(|_e| {
-        });
-        fs::remove_dir_all(format!("{}versions", mods_dir)).ok();
+        fs::remove_dir_all(format!(r"{}\mods", mods_dir)).expect("unable to delete old mods");    
+        fs::remove_dir_all(format!(r"{}\versions", mods_dir)).ok();
 
     };
     
