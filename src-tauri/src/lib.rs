@@ -1,18 +1,13 @@
-use std::{path::PathBuf, fs::{self, canonicalize}, env::{self, var}};
-
+use std::{path::PathBuf, fs::{self, canonicalize}, env::{self, var}, collections::HashMap, cmp::min, fs::File, io::Write};
 use fs_extra::dir::CopyOptions;
 use futures_util::StreamExt;
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, Map};
+use chrono::{DateTime, Utc};
 use tauri::Manager;
-use {
-    serde::Serialize,
-    reqwest::Client,
-    std::{
-        cmp::min,
-        fs::File,
-        io::Write
-    },
-    zip_extensions::*,
-};
+use reqwest::Client;
+use zip_extensions::*;
+
 
 #[derive(Clone, Serialize)]
 pub struct StatusUpdate {
@@ -22,6 +17,27 @@ pub struct StatusUpdate {
 #[derive(Clone, Serialize)]
 pub struct ProgressUpdate {
   progress: i32
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LauncherProfiles {
+    profiles: HashMap<String, Profile>,
+    #[serde(flatten)]
+    other: Map<String, Value>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct Profile {
+    name: String,
+    #[serde(rename = "type")]
+    profile_type: String,
+    created: DateTime<Utc>,
+    last_version_id: String,
+    icon: String,
+    #[serde(flatten)]
+    other: Map<String, Value>,
 }
 
 pub struct LauncherPath;
@@ -45,7 +61,7 @@ pub fn mclauncher() -> PathBuf {
     PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Minecraft Launcher\MinecraftLauncher.exe")
 }
 
-pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: String, custom: bool) {
+pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: String, _custom: bool) {
     if launcher == "default" {
         if LauncherPath::dotminecraft().exists() {
             let options = CopyOptions { overwrite: false, skip_exist: true, buffer_size: 64000, copy_inside: false, content_only: false, depth: 0 };
@@ -53,8 +69,31 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
             fs_extra::move_items(&[path.join("versions").to_string_lossy().to_string()], LauncherPath::dotminecraft().to_string_lossy().to_string(), &options).expect("unable to move files");
             update_progress(90, app);
         }
-        if !custom && LauncherPath::dotminecraft().exists() {
-            update_status("creating new installation in minecraft launcher", app);
+        if LauncherPath::dotminecraft().exists() {
+            let launcher_profiles = fs::read_to_string(LauncherPath::dotminecraft().join("launcher_profiles.json")).expect("unable to read profiles");
+            if !launcher_profiles.is_empty() {
+                let mut launcher_json: LauncherProfiles = serde_json::from_str(&launcher_profiles).expect("unable to convert to json");
+                if !launcher_json.profiles.contains_key("ahms") {
+                    let mut other = Map::new();
+                    other.insert("gameDir".to_string(), serde_json::Value::String(path.to_string_lossy().to_string()));
+
+                    update_status("creating new installation in minecraft launcher", app);
+                    launcher_json.profiles.insert(
+                        "ahms".to_string(),
+                        Profile {
+                            name: "AHMS".to_owned(),
+                            profile_type: "custom".into(),
+                            created: Utc::now(),
+                            last_version_id: reqwest::get("https://raw.githubusercontent.com/Hbarniq/ahms/main/launcher_version").await.unwrap().text().await.unwrap(),
+                            icon: "furnace".to_owned(),
+                            other
+                        },
+                    );
+                    let writer = fs::OpenOptions::new().read(true).write(true).open(LauncherPath::dotminecraft().join("launcher_profiles.json")).expect("unable to open file");
+                    serde_json::to_writer_pretty(writer, &launcher_json).expect("unable to write to profiles");
+                } 
+            }
+
             update_progress(95, app);
         }
     } else if launcher == "curseforge" {
