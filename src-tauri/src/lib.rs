@@ -1,4 +1,5 @@
 use std::{path::PathBuf, fs::{self, canonicalize}, env::{self, var}, collections::HashMap, cmp::min, fs::File, io::Write};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use fs_extra::dir::CopyOptions;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -85,7 +86,7 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
                             profile_type: "custom".into(),
                             created: Utc::now(),
                             last_version_id: reqwest::get("https://raw.githubusercontent.com/Hbarniq/ahms/main/launcher_version").await.unwrap().text().await.unwrap(),
-                            icon: "furnace".to_owned(),
+                            icon: format!("data:image/png;base64,{}", BASE64.encode(reqwest::get("https://raw.githubusercontent.com/Hbarniq/ahms/main/assets/icon.png").await.unwrap().bytes().await.unwrap())),
                             other
                         },
                     );
