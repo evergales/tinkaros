@@ -78,9 +78,8 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
             fs_extra::move_items(&[path.join("versions").to_string_lossy().to_string()], LauncherPath::dotminecraft().to_string_lossy().to_string(), &options).ok();
             update_progress(90, app);
         }
-        if LauncherPath::dotminecraft().exists() {
+        if LauncherPath::dotminecraft().join("launcher_profiles.json").exists() {
             let launcher_profiles = fs::read_to_string(LauncherPath::dotminecraft().join("launcher_profiles.json")).expect("unable to read profiles");
-            if !LauncherPath::dotminecraft().join("launcher_profiles.json").exists() { return; }
             if !launcher_profiles.is_empty()  {
                 let mut launcher_json: LauncherProfiles = serde_json::from_str(&launcher_profiles).expect("unable to convert to json");
                 if !launcher_json.profiles.contains_key("ahms") {
