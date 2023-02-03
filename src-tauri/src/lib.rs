@@ -75,7 +75,7 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
         if LauncherPath::dotminecraft().exists() {
             let options = CopyOptions { overwrite: false, skip_exist: true, buffer_size: 64000, copy_inside: false, content_only: false, depth: 0 };
             update_status("installing required versions", app);
-            fs_extra::move_items(&[path.join("versions").to_string_lossy().to_string()], LauncherPath::dotminecraft().to_string_lossy().to_string(), &options).expect("unable to move files");
+            fs_extra::move_items(&[path.join("versions").to_string_lossy().to_string()], LauncherPath::dotminecraft().to_string_lossy().to_string(), &options).ok();
             update_progress(90, app);
         }
         if LauncherPath::dotminecraft().exists() {
