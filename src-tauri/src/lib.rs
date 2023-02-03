@@ -43,8 +43,16 @@ struct Profile {
 
 pub struct LauncherPath;
 impl LauncherPath { // bunch of path declarations
-    pub fn mclauncher() -> PathBuf { PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Minecraft Launcher\MinecraftLauncher.exe") }
-    pub fn dotminecraft() -> PathBuf { PathBuf::from(var("APPDATA").unwrap()).join(".minecraft") }
+    pub fn mclauncher() -> PathBuf { 
+        let case1 = PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Minecraft Launcher\MinecraftLauncher.exe");
+        let case2 = PathBuf::from(var("ProgramFiles").unwrap()).join(r"WindowsApps\Microsoft.4297127D64EC6_1.1.28.0_x64__8wekyb3d8bbwe\Minecraft.exe"); //microsoft sucks
+        if case1.exists() { return case1; } else if case2.exists() { return case2; } else { return case2; }
+    }
+    pub fn dotminecraft() -> PathBuf {
+        let case1 = PathBuf::from(var("APPDATA").unwrap()).join(".minecraft");
+        let case2 = PathBuf::from(var("APPDATA").unwrap()).join(r"Roaming\.minecraft");
+        if case1.exists() { return case1;} else if case2.exists() { return case2; } else { return case2; } 
+    }
     pub fn curseforge() -> PathBuf { PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Overwolf\OverwolfLauncher.exe") }
     pub fn curseforge_instance() -> PathBuf { PathBuf::from(var("USERPROFILE").unwrap()).join(r"curseforge\minecraft\Instances\ahms") }
     pub fn prism() -> PathBuf { PathBuf::from(var("LOCALAPPDATA").unwrap()).join(r"Programs\PrismLauncher\prismlauncher.exe") }
@@ -72,7 +80,8 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
         }
         if LauncherPath::dotminecraft().exists() {
             let launcher_profiles = fs::read_to_string(LauncherPath::dotminecraft().join("launcher_profiles.json")).expect("unable to read profiles");
-            if !launcher_profiles.is_empty() {
+            if !LauncherPath::dotminecraft().join("launcher_profiles.json").exists() { return; }
+            if !launcher_profiles.is_empty()  {
                 let mut launcher_json: LauncherProfiles = serde_json::from_str(&launcher_profiles).expect("unable to convert to json");
                 if !launcher_json.profiles.contains_key("ahms") {
                     let mut other = Map::new();
