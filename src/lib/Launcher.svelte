@@ -43,8 +43,12 @@
   </main>
   
   <style>
+    @font-face {
+      font-family: "Minecraft";
+      src: url("/minecraft-bold.otf") format("opentype");
+    }
     :root {
-      font-family: minecraft;
+      font-family: Minecraft;
     }
   
     .account {

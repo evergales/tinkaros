@@ -46,12 +46,12 @@ impl LauncherPath { // bunch of path declarations
     pub fn mclauncher() -> PathBuf { 
         let case1 = PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Minecraft Launcher\MinecraftLauncher.exe");
         let case2 = PathBuf::from(var("ProgramFiles").unwrap()).join(r"WindowsApps\Microsoft.4297127D64EC6_1.1.28.0_x64__8wekyb3d8bbwe\Minecraft.exe"); //microsoft sucks
-        if case1.exists() { return case1; } else if case2.exists() { return case2; } else { return case2; }
+        if case1.exists() { case1 } else { case2 }
     }
     pub fn dotminecraft() -> PathBuf {
         let case1 = PathBuf::from(var("APPDATA").unwrap()).join(".minecraft");
         let case2 = PathBuf::from(var("APPDATA").unwrap()).join(r"Roaming\.minecraft");
-        if case1.exists() { return case1;} else if case2.exists() { return case2; } else { return case2; } 
+        if case1.exists() { case1 } else { case2 }
     }
     pub fn curseforge() -> PathBuf { PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Overwolf\OverwolfLauncher.exe") }
     pub fn curseforge_instance() -> PathBuf { PathBuf::from(var("USERPROFILE").unwrap()).join(r"curseforge\minecraft\Instances\ahms") }
