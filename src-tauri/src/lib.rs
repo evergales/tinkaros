@@ -1,4 +1,4 @@
-use std::{path::PathBuf, fs::{self, canonicalize}, env::{self, var}, collections::HashMap, cmp::min, fs::File, io::Write};
+use std::{path::PathBuf, fs::{self, canonicalize}, env::{self, consts, var}, collections::HashMap, cmp::min, fs::File, io::Write};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use fs_extra::dir::CopyOptions;
 use futures_util::StreamExt;
@@ -43,20 +43,62 @@ struct Profile {
 
 pub struct LauncherPath;
 impl LauncherPath { // bunch of path declarations
-    pub fn mclauncher() -> PathBuf { 
-        let case1 = PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Minecraft Launcher\MinecraftLauncher.exe");
-        let case2 = PathBuf::from(var("ProgramFiles").unwrap()).join(r"WindowsApps\Microsoft.4297127D64EC6_1.1.28.0_x64__8wekyb3d8bbwe\Minecraft.exe"); //microsoft sucks
-        if case1.exists() { case1 } else { case2 }
+    pub fn mclauncher() -> PathBuf {
+        match consts::OS {
+            "windows" => {
+                let default = PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Minecraft Launcher\MinecraftLauncher.exe");
+                let msstore = PathBuf::from(var("ProgramFiles").unwrap()).join(r"WindowsApps\Microsoft.4297127D64EC6_1.1.28.0_x64__8wekyb3d8bbwe\Minecraft.exe"); //microsoft sucks
+                if default.exists() { default } else { msstore }
+            },
+            "linux" => PathBuf::from(var("HOME").unwrap()).join(".minecraft"),
+            _ => panic!("incompatible os")
+        }
     }
     pub fn dotminecraft() -> PathBuf {
-        let case1 = PathBuf::from(var("APPDATA").unwrap()).join(".minecraft");
-        let case2 = PathBuf::from(var("APPDATA").unwrap()).join(r"Roaming\.minecraft");
-        if case1.exists() { case1 } else { case2 }
+        match consts::OS {
+            "windows" => {
+                let case1 = PathBuf::from(var("APPDATA").unwrap()).join(".minecraft");
+                let case2 = PathBuf::from(var("APPDATA").unwrap()).join(r"Roaming\.minecraft");
+                if case1.exists() { case1 } else { case2 }
+            },
+            "linux" => PathBuf::from(var("HOME").unwrap()).join(".minecraft"),
+            _ => panic!("incompatible os")
+        }
     }
-    pub fn curseforge() -> PathBuf { PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Overwolf\OverwolfLauncher.exe") }
-    pub fn curseforge_instance() -> PathBuf { PathBuf::from(var("USERPROFILE").unwrap()).join(r"curseforge\minecraft\Instances\ahms") }
-    pub fn prism() -> PathBuf { PathBuf::from(var("LOCALAPPDATA").unwrap()).join(r"Programs\PrismLauncher\prismlauncher.exe") }
-    pub fn prism_instance() -> PathBuf { PathBuf::from(var("APPDATA").unwrap()).join(r"PrismLauncher\instances\ahms\.minecraft") }
+    pub fn curseforge() -> PathBuf { 
+        match consts::OS {
+            "windows" => PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Overwolf\OverwolfLauncher.exe"),
+            _ => PathBuf::from("")
+        }
+    }
+    pub fn curseforge_instance() -> PathBuf { 
+        match consts::OS {
+            "windows" => PathBuf::from(var("USERPROFILE").unwrap()).join(r"curseforge\minecraft\Instances\ahms"),
+            _ => PathBuf::from("")
+        }
+    }
+    pub fn prism() -> PathBuf { 
+        match consts::OS {
+            "windows" => PathBuf::from(var("LOCALAPPDATA").unwrap()).join(r"Programs\PrismLauncher\prismlauncher.exe"),
+            "linux" => {
+                let def = PathBuf::from("/usr/share/applications/org.prismlauncher.PrismLauncher.desktop");
+                let flatpak = PathBuf::from("/var/lib/flatpak/exports/share/applications/org.prismlauncher.PrismLauncher.desktop");
+                if def.exists() { def } else { flatpak }
+            }
+            _ => panic!("incompatible os")
+        }
+    }
+    pub fn prism_instance() -> PathBuf {
+        match consts::OS {
+            "windows" => PathBuf::from(var("APPDATA").unwrap()).join(r"PrismLauncher\instances\ahms\.minecraft"),
+            "linux" => {
+                let def = PathBuf::from(var("HOME").unwrap()).join(".local/share/PrismLauncher/instances");
+                let flatpak = PathBuf::from(var("HOME").unwrap()).join(".var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/instances");
+                if def.exists() { def } else { flatpak }
+            }
+            _ => panic!("incompatible os")
+        }
+    }
 }
 
 
@@ -64,11 +106,7 @@ pub fn resolve(path: &PathBuf) {
     if !path.exists() {
         fs::create_dir_all(path).unwrap();
     }
-}
-
-pub fn mclauncher() -> PathBuf {
-    PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Minecraft Launcher\MinecraftLauncher.exe")
-}
+}   
 
 pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: String, _custom: bool) {
     if launcher == "default" {
@@ -145,8 +183,8 @@ pub async fn update_files(path: &PathBuf, app: &tauri::AppHandle) {
         if !emptydir {fs::create_dir(mods_dir).ok();}
     } else {
         update_status("removing old data", app);
-        fs::remove_dir_all(format!(r"{}\mods", mods_dir)).expect("unable to delete old mods");    
-        fs::remove_dir_all(format!(r"{}\versions", mods_dir)).ok();
+        fs::remove_dir_all(format!("{}/mods", mods_dir)).expect("unable to delete old mods");    
+        fs::remove_dir_all(format!("{}/versions", mods_dir)).ok();
 
     };
     

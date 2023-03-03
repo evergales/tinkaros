@@ -3,7 +3,7 @@
     windows_subsystem = "windows"
 )]
 
-use std::{fs::{self, File}, path::PathBuf, env::var, process::Command, time::{SystemTime, UNIX_EPOCH}};
+use std::{fs::{self, File}, path::PathBuf, env::{consts}, process::Command, time::{SystemTime, UNIX_EPOCH}};
 use mci_reloaded::{resolve, update_files, update_status, resolve_configs, LauncherPath, update_progress};
 use tauri::{api::path, Config};
 use serde::{Serialize, Deserialize};
@@ -54,7 +54,7 @@ fn get_config() -> AppConfig {
 #[tauri::command]
 fn init(chosen: &str, path: &str, custom: bool) {
   let mut _path = path;
-  let _p = PathBuf::from(var("APPDATA").unwrap()).join(r"ahms\game");
+  let _p =  path::app_config_dir(&Config::default()).unwrap().join("ahms/game");
   if _path.is_empty() {
     _path = _p.to_str().unwrap()
   }
@@ -83,9 +83,8 @@ async fn get_launchers() -> Vec<Launcher> {
   let mut found: Vec<Launcher> = Vec::new();
 
   if LauncherPath::mclauncher().exists() {
-    let path =  PathBuf::from(var("APPDATA").unwrap()).join(r"ahms\game");
-    found.push(Launcher::new("default".to_string(), path.to_string_lossy().to_string()))
-
+    let path = path::app_config_dir(&Config::default()).unwrap().join(r"ahms\game");
+    found.push(Launcher::new("default".to_string(), path.to_string_lossy().to_string()));
   }
 
   if LauncherPath::curseforge().exists() {
@@ -154,7 +153,11 @@ async fn get_version(path: String) -> VersionRes {
 
 #[tauri::command]
 fn explorer(path: &str) {
-  Command::new("explorer").args([path]).spawn().unwrap();
+  match consts::OS {
+    "windows" => { Command::new("explorer").args([path]).spawn().unwrap(); },
+    "linux" => { Command::new("xdg-open").args([path]).spawn().unwrap(); },
+    _ => {}
+  }
 }
 
 #[tauri::command]

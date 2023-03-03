@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/tauri";
   import { exists } from '@tauri-apps/api/fs';
+  import { type } from "@tauri-apps/api/os"
   import { open } from '@tauri-apps/api/dialog';
   import { config } from "../stores/config";
   import { state } from "../stores/state";

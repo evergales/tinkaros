@@ -62,12 +62,7 @@
       "csp": null
     },
     "updater": {
-      "active": true,
-      "endpoints": [
-        "https://gist.githubusercontent.com/Hbarniq/0d7054e622f39e67931b6869e9af879a/raw/59dba0f7f31f544696d3e6c00838a3d89e817b1a/mci-reloaded-latest.json"
-      ],
-      "dialog": true,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVCMUY2Mzc2QUNCMDg4QjUKUldTMWlMQ3NkbU1mNjNGYThLOFhweTNMZllldW4wK3I4dFBCYzh1akNxTmV6S2xOMEprQVlPaTMK"
+      "active": false
     },
     "windows": [
       {
