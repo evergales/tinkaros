@@ -83,7 +83,7 @@ async fn get_launchers() -> Vec<Launcher> {
   let mut found: Vec<Launcher> = Vec::new();
 
   if LauncherPath::mclauncher().exists() {
-    let path = path::app_config_dir(&Config::default()).unwrap().join(r"ahms\game");
+    let path = path::app_config_dir(&Config::default()).unwrap().join(r"ahms/game");
     found.push(Launcher::new("default".to_string(), path.to_string_lossy().to_string()));
   }
 

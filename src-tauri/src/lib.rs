@@ -124,7 +124,7 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
                     let mut other = Map::new();
                     other.insert("gameDir".to_string(), serde_json::Value::String(path.to_string_lossy().to_string()));
 
-                    update_status("creating new installation in minecraft launcher", app);
+                    update_status("installing ahms in mc launcher", app);
                     launcher_json.profiles.insert(
                         "ahms".to_string(),
                         Profile {
