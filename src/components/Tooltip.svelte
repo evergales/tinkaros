@@ -23,6 +23,7 @@
       opacity: 0;
       visibility: hidden;
       transition: opacity 150ms, visibility 150ms;
+      pointer-events: none;
     }
     .default-tip {
       display: inline-block;
