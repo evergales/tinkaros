@@ -145,7 +145,6 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
                         if let Some(ver) = launcher_json.profiles.get_mut("ahms") {
                             ver.last_version_id = latest_version
                         }
-                        println!("{:?}", serde_json::to_string_pretty(&launcher_json).unwrap());
                         let writer = fs::OpenOptions::new().read(true).write(true).truncate(true).open(LauncherPath::dotminecraft().join("launcher_profiles.json")).expect("unable to open file");
                         serde_json::to_writer_pretty(writer, &launcher_json).expect("unable to write to profiles");
                     }
