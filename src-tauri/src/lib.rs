@@ -138,7 +138,18 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
                     );
                     let writer = fs::OpenOptions::new().read(true).write(true).open(LauncherPath::dotminecraft().join("launcher_profiles.json")).expect("unable to open file");
                     serde_json::to_writer_pretty(writer, &launcher_json).expect("unable to write to profiles");
-                } 
+                } else {
+                    let latest_version = reqwest::get("https://raw.githubusercontent.com/Hbarniq/ahms/main/launcher_version").await.unwrap().text().await.unwrap();
+                    if launcher_json.profiles.get("ahms").unwrap().last_version_id != latest_version {
+                        launcher_json.profiles.get_mut("ahms").unwrap().last_version_id = latest_version.to_owned();
+                        if let Some(ver) = launcher_json.profiles.get_mut("ahms") {
+                            ver.last_version_id = latest_version
+                        }
+                        println!("{:?}", serde_json::to_string_pretty(&launcher_json).unwrap());
+                        let writer = fs::OpenOptions::new().read(true).write(true).open(LauncherPath::dotminecraft().join("launcher_profiles.json")).expect("unable to open file");
+                        serde_json::to_writer_pretty(writer, &launcher_json).expect("unable to write to profiles");
+                    }
+                }
             }
 
             update_progress(95, app);
