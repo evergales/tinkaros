@@ -1,4 +1,4 @@
-use std::{path::PathBuf, fs::{self, canonicalize}, env::{self, consts, var}, collections::HashMap, cmp::min, fs::File, io::Write};
+use std::{path::PathBuf, fs::{self, canonicalize}, env::{consts, var}, collections::HashMap, cmp::min, fs::File, io::Write};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use fs_extra::dir::CopyOptions;
 use futures_util::StreamExt;
@@ -182,33 +182,25 @@ pub fn update_progress(progress: i32, app: &tauri::AppHandle) {
 }
 
 pub async fn update_files(path: &PathBuf, app: &tauri::AppHandle) {
-    let _path = path.clone();
     let downloadurl = "https://drive.google.com/uc?export=download&id=1qa7gThngkqNooUweuyVs6Kes8w_pIJ0l&confirm=t";
     let update: bool = path.join("mods").exists();
-    let emptydir: bool = !update && fs::read_dir(path).unwrap().count() == 0;
-    let raw_mczip = if !update && !emptydir { _path.join("modpack/mcmods.zip") } else {path.join("./mcmods.zip")};
-    let mcmodszip = raw_mczip.to_str().unwrap();
-    let raw_modsdir = if !update && !emptydir { path.join("modpack")} else { path.to_path_buf() };
-    let mods_dir = raw_modsdir.to_str().unwrap();
-    if !update {
-        if !emptydir {fs::create_dir(mods_dir).ok();}
-    } else {
-        update_status("removing old data", app);
-        fs::remove_dir_all(format!("{}/mods", mods_dir)).expect("unable to delete old mods");    
-        fs::remove_dir_all(format!("{}/versions", mods_dir)).ok();
+    let mcmodszip = path.join("mcmods.zip");
 
-    };
-    
-    let cwd = env::current_dir().unwrap();
-    let mut a_path = cwd.into_os_string().into_string().unwrap();
-    if mcmodszip != "./mcmods.zip" { a_path.push_str(r"\modpack"); }
+    if update {
+        update_status("removing old data", app);
+        fs::remove_dir_all(path.join("mods")).unwrap_or_else(|e| {
+            eprintln!("unable to delete old mods: {}", e);
+        });
+        fs::remove_dir_all(path.join("versions")).ok();
+    }
+
     update_status("downloading files", app);
-    download_file(&Client::new(), downloadurl, mcmodszip, app, true).await.unwrap();
+    download_file(&Client::new(), downloadurl, &mcmodszip.to_str().unwrap(), app, true).await.unwrap_or_else(|e| eprintln!("unable to download files: {}", e));
 
     update_status("extracting files", app);
-    let mczip = PathBuf::from(&mcmodszip);
-    let extract_dir = PathBuf::from(&mods_dir);
-    zip_extract(&mczip, &extract_dir).expect("Could not extract zip file");
+    zip_extract(&mcmodszip, &path).unwrap_or_else(|e| {
+        eprintln!("unable to extract files: {}", e);
+    });
 }
 
 async fn resolve_lconfigs(path: &PathBuf, ltype: String, app: &tauri::AppHandle) {
