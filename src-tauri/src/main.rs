@@ -29,6 +29,14 @@ struct VersionRes {
   last_updated: u64
 }
 
+#[derive(Serialize, Deserialize, Default)]
+struct UpdaterVersion {
+  version: String,
+  notes: String,
+  pub_date: String,
+  url: String
+}
+
 #[derive(Serialize)]
 struct Launcher {
   name: String,
@@ -171,6 +179,17 @@ fn check_installed(path: &str) -> bool {
   installed
 }
 
+#[tauri::command]
+async fn check_update(app: tauri::AppHandle) -> (bool, UpdaterVersion) {
+  let latest_raw = reqwest::get("https://gist.githubusercontent.com/Hbarniq/0d7054e622f39e67931b6869e9af879a/raw/c21a7fd9a618b3ad9cd6c0a2efa289c65ba76db3/mci-reloaded-latest.json").await.unwrap().text().await.unwrap();
+  let latest: UpdaterVersion = serde_json::from_str(&latest_raw).expect("unable to convert to json");
+  if tauri::api::version::is_greater(app.package_info().version.to_string().as_str(), &latest.version).unwrap() {
+    return (true, latest)
+  } else {
+    return (false, UpdaterVersion::default())
+  }
+}
+
 
 //async fn login(selected: &str, username: &str, email: &str, password: &str) {
 //  // microsoft auth costs money so not doing this yet..
@@ -183,7 +202,7 @@ fn check_installed(path: &str) -> bool {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![init, get_config, get_launchers, update, log_update, get_version, explorer, check_installed])
+        .invoke_handler(tauri::generate_handler![init, get_config, get_launchers, update, log_update, get_version, explorer, check_installed, check_update])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

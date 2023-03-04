@@ -11,6 +11,13 @@
     await invoke("get_config").then(async (c) => {
       config.set(c);
     });
+    invoke("check_update").then(async (r: [boolean, Object]) => {
+      if (r[0]) {       
+        let updatePopup = r[1]
+        updatePopup["shown"] = true
+        $state.updatePopup = updatePopup
+      }
+    })
     $state.loading = false
   }
 

@@ -57,6 +57,7 @@
   }
 
   onMount(() => {
+    getinfo();
     setInterval(() => { updateTime() }, 30000)
     listen("status", (event: any) => {
       $state.updateState = event.payload.status
@@ -66,8 +67,6 @@
       $state.progress = event.payload.progress
     })
   })
-
-  getinfo();
 </script>
 
 <!-- svelte-ignore a11y-missing-attribute -->
