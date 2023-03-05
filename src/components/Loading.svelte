@@ -1,5 +1,8 @@
+<script>
+    import { fade } from "svelte/transition";
+</script>
 <main style="background-color: #2f2f2f;">
-    <div class="loading-div" style="vertical-align: middle; justify-content: center; display: flex;">
+    <div class="loading-div" style="vertical-align: middle; justify-content: center; display: flex;" transition:fade>
       <div class="loading_box">
         <div class="loading"></div>
         <h1 style="color: #9b9b9b;">loading</h1>
@@ -9,7 +12,6 @@
 
 <style>
 .loading-div {
-  animation: fadeIn 0.2s;
   transform: translateX(-50%) translateY(-50%);
   top: 50%;
   left: 50%;

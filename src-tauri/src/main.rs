@@ -184,9 +184,9 @@ async fn check_update(app: tauri::AppHandle) -> (bool, UpdaterVersion) {
   let latest_raw = reqwest::get("https://gist.githubusercontent.com/Hbarniq/0d7054e622f39e67931b6869e9af879a/raw/c21a7fd9a618b3ad9cd6c0a2efa289c65ba76db3/mci-reloaded-latest.json").await.unwrap().text().await.unwrap();
   let latest: UpdaterVersion = serde_json::from_str(&latest_raw).expect("unable to convert to json");
   if tauri::api::version::is_greater(app.package_info().version.to_string().as_str(), &latest.version).unwrap() {
-    return (true, latest)
+    (true, latest)
   } else {
-    return (false, UpdaterVersion::default())
+    (false, UpdaterVersion::default())
   }
 }
 

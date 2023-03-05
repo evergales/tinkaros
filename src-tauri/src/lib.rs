@@ -194,10 +194,10 @@ pub async fn update_files(path: &PathBuf, app: &tauri::AppHandle) {
     }
 
     update_status("downloading files", app);
-    download_file(&Client::new(), downloadurl, &mcmodszip.to_str().unwrap(), app, true).await.unwrap_or_else(|e| eprintln!("unable to download files: {}", e));
+    download_file(&Client::new(), downloadurl, mcmodszip.to_str().unwrap(), app, true).await.unwrap_or_else(|e| eprintln!("unable to download files: {}", e));
 
     update_status("extracting files", app);
-    zip_extract(&mcmodszip, &path).unwrap_or_else(|e| {
+    zip_extract(&mcmodszip, path).unwrap_or_else(|e| {
         eprintln!("unable to extract files: {}", e);
     });
 }

@@ -1,11 +1,12 @@
 <script>
+  import { fade, fly } from "svelte/transition";
   import { state } from "../stores/state";
 </script>
 
 <main style="background-color: #2f2f2f;">
-    <div class="loading-div" style="vertical-align: middle; justify-content: center; display: flex;">
+    <div class="loading-div" style="vertical-align: middle; justify-content: center; display: flex; z-index: 2;" transition:fade={{duration: 200}}>
         <!-- svelte-ignore a11y-missing-attribute -->
-        <div class="info-box">
+        <div class="info-box" transition:fly={{y: -100, duration: 200}}>
             <h1>coming soon!</h1>
             <a>because of issues with authentication I was unable to create a custom launcher so far..</a>
             <a>later when I actually can spend money on this project I will :)</a>
@@ -23,7 +24,6 @@
 }
 
 .loading-div {
-  animation: fadeIn 0.2s;
   transform: translateX(-50%) translateY(-50%);
   top: 50%;
   left: 50%;

@@ -7,10 +7,13 @@
   import { listen } from "@tauri-apps/api/event";
   import { timeSince } from "../scripts/parseTime";
   import { onMount } from "svelte";
+  import { fly } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
   
   let bg: string;
   let initial: boolean;
   let done: boolean = false;
+  let loaded: boolean = false;
   
   let updatedAt: string = "...";
   let currentVer: string = "...";
@@ -71,8 +74,8 @@
 
 <!-- svelte-ignore a11y-missing-attribute -->
 <main>
-    <div class="bg-img" style="background-image: url({bg});">
-        <div class="update-box">
+  <div class="bg-img" style="background-image: url({bg});">
+        <div class="update-box" in:fly={{duration: 500, y: -1000, easing: cubicOut}}>
             <h1>{$config.custom ? `custom | ${$config.launcher}` : $config.launcher}</h1>
             <div class="update" id="infobox">
                 {#if $state.updating}
@@ -107,7 +110,6 @@
     left: 50%;
     width: max-content;
     position: absolute;
-    transition: 0.2s;
     display: flexbox;
     padding: 2em;
 
@@ -117,7 +119,6 @@
     border-radius: 8px;
   }
   .bg-img {
-    animation: fadeIn 1s;
     transform: translateX(-50%) translateY(-50%);
     top: 50%;
     left: 50%;
@@ -138,7 +139,6 @@
     height: 20em;
     border-radius: 1.5em;
     box-shadow: 0 0.2em rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.2);
-    animation: swim 0.5s ease-in-out;
   }
   .openPath {
     position: absolute;
@@ -151,9 +151,5 @@
     fill: white;
     width: 1em;
     height: 1em;
-  }
-  @keyframes swim {
-    0% {transform: translateX(-50%) translateY(-200%)}
-    100% {transform: translateX(-50%) translateY(-50%)}
   }
 </style>

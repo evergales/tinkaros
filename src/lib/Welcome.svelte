@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { state } from "../stores/state"
+  import { fly } from "svelte/transition";
   import InfoPopup from "../components/infoPopup.svelte";
   import SelectCustomLauncher from "../components/selectCustomLauncher.svelte";
   let mainselect: boolean = true;
@@ -14,17 +16,21 @@
       welcome_to = texts[c]
     }, 4000)
   }
-  changing_text()
 
+  onMount(() => {
+    changing_text()
+  })
 </script>
 <main>
   {#if mainselect}
     {#if $state.infoPopupShown}<InfoPopup />{/if}
     <div class="row">
         <h1>Welcome to AHMS&nbsp;</h1>
-        {#key welcome_to}
-        <h1 style="animation: fadeIn 500ms;">{welcome_to}!</h1>
-        {/key}
+        <div class="text-wrapper">
+          {#key welcome_to}
+          <h1 in:fly={{y: -50, duration: 400}} out:fly={{y: 50, duration: 200}}>{welcome_to}!</h1>
+          {/key}
+        </div>
       </div>
     
       <p>choose what to use as a launcher</p>
@@ -37,3 +43,13 @@
     <SelectCustomLauncher />
   {/if}
 </main>
+
+<style>
+  .text-wrapper {
+    position: relative;
+    width: 10rem;
+  }
+  .text-wrapper h1 {
+    position: absolute;
+  }
+</style>

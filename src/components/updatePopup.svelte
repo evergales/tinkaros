@@ -1,12 +1,13 @@
 <script>
     import { state } from "../stores/state";
     import { open } from '@tauri-apps/api/shell';
+    import { fade, fly } from "svelte/transition";
 </script>
 
 <main style="background-color: #2f2f2f;">
-    <div class="info-div" style="vertical-align: middle; justify-content: center; display: flex; z-index: 999;">
+    <div class="info-div" style="vertical-align: middle; justify-content: center; display: flex; z-index: 999;" transition:fade={{duration: 200}}>
         <!-- svelte-ignore a11y-missing-attribute -->
-        <div class="info-box">
+        <div class="info-box" transition:fly={{y: -100, duration: 200}}>
             <h1>update available!</h1>
             <a>{$state.updatePopup.notes}</a>
             <a>version: {$state.updatePopup.version}</a>
@@ -34,7 +35,6 @@
 }
 
 .info-div {
-  animation: fadeIn 0.2s;
   transform: translateX(-50%) translateY(-50%);
   top: 50%;
   left: 50%;
