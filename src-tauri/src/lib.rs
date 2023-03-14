@@ -34,6 +34,7 @@ struct Profile {
     name: String,
     #[serde(rename = "type")]
     profile_type: String,
+    #[serde(default)]
     created: DateTime<Utc>,
     last_version_id: String,
     icon: String,
