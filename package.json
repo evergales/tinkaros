@@ -16,7 +16,6 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.0.0",
     "@tauri-apps/cli": "^1.2.2",
-    "@tauri-apps/cli-linux-x64-gnu": "^1.2.3",
     "@tsconfig/svelte": "^3.0.0",
     "@types/atob": "^2.1.2",
     "@types/node": "^18.7.10",
