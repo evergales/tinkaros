@@ -190,16 +190,6 @@ async fn check_update(app: tauri::AppHandle) -> (bool, UpdaterVersion) {
   }
 }
 
-
-//async fn login(selected: &str, username: &str, email: &str, password: &str) {
-//  // microsoft auth costs money so not doing this yet..
-//
-//  // some maybe helpful resources
-//  // https://wiki.vg/Microsoft_Authentication_Scheme
-//  // https://github.com/dommilosz/minecraft-auth/blob/master/src/index.ts
-//  // https://github.com/gorilla-devs/GDLauncher/blob/7fd15c7d75de8af1416c53c6df3acc69fc3b0fdb/src/common/reducers/actions.js#L463
-//}
-
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![init, get_config, get_launchers, update, log_update, get_version, explorer, check_installed, check_update])

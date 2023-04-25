@@ -15,6 +15,14 @@
   -webkit-text-size-adjust: 100%;
 }
 
+@font-face {
+  font-family: "Minecraft";
+  src: url("/minecraft-bold.otf") format("opentype");
+}
+:root {
+  font-family: Minecraft;
+}
+
 ::selection {
   background: #176436;
 }
