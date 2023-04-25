@@ -13,7 +13,6 @@
   let bg: string;
   let initial: boolean;
   let done: boolean = false;
-  let loaded: boolean = false;
   
   let updatedAt: string = "...";
   let currentVer: string = "...";
@@ -29,7 +28,6 @@
   }
   
   async function update() {
-    document.getElementById("infobox").setAttribute("value", "updating")
     $state.updating = true
     await invoke("update", { launcher: $config.launcher, path: $config.path, custom: $config.custom })
     await invoke("log_update", { path: $config.path })
@@ -39,7 +37,6 @@
   async function finish() {
     version()
     initial = false
-    document.getElementById("infobox").removeAttribute("value")
     $state.updating = false
     $state.updateState = "waiting.."
     $state.progress = 0
@@ -77,7 +74,7 @@
   <div class="bg-img" style="background-image: url({bg});">
         <div class="update-box" in:fly={{duration: 500, y: -1000, easing: cubicOut}}>
             <h1>{$config.custom ? `custom | ${$config.launcher}` : $config.launcher}</h1>
-            <div class="update" id="infobox">
+            <div class="update" style={$state.updating ? 'background-color: #0f0f0f98; border-radius: 8px;' : ''}>
                 {#if $state.updating}
                 <a>{$state.updateState}</a><br>
                 <a>progress: {$state.progress}%</a>
@@ -112,11 +109,6 @@
     position: absolute;
     display: flexbox;
     padding: 2em;
-
-  }
-  .update:global([value="updating"]) {
-    background-color: #0f0f0f98;
-    border-radius: 8px;
   }
   .bg-img {
     transform: translateX(-50%) translateY(-50%);
