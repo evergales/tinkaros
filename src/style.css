@@ -6,6 +6,7 @@
 
   color: #f6f6f6;
   background-color: #2f2f2f;
+  font-family: Minecraft;
 
   list-style: none;
   font-synthesis: none;
@@ -19,26 +20,20 @@
   font-family: "Minecraft";
   src: url("/minecraft-bold.otf") format("opentype");
 }
-:root {
-  font-family: Minecraft;
-}
 
 ::selection {
-  background: #176436;
-}
-
-.container {
-  margin: 0;
-  padding-top: 10vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  background: rgba(37, 148, 81, 0.5);
 }
 
 .row {
   display: flex;
   justify-content: center;
+}
+
+.container {
+  background-color: rgba(88, 88, 88, 0.2);
+  border: 0.125rem solid rgba(88, 88, 88, 0.2);
+  border-radius: 0.5rem;
 }
 
 a {
@@ -54,29 +49,28 @@ h1 {
 input,
 select,
 button {
+  color: inherit;
   border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.5em 0.6em;
-  font-size: 1em;
-  font-weight: 500;
+  border: 0.1rem solid transparent;
+  padding: 0.5rem;
   font-family: inherit;
-  color: #ffffff;
-  background-color: #0f0f0f98;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.2);
+  transition: 0.2s ease;
 }
 
 button:hover {
-  border-color: #1c7841;
+  border-color: rgba(37, 148, 81, 0.5);
+  cursor: pointer;
 }
 
-input,
-button {
-  outline: none;
+button:active {
+  transform: scale(95%);
+}
+
+button:disabled {
+  background-color: rgba(255, 255, 255, .2);
+  cursor: unset;
+  border: transparent;
 }
 
 @keyframes fadeIn {

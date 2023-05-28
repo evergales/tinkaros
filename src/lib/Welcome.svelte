@@ -1,181 +1,139 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/tauri";
-  import { exists } from '@tauri-apps/api/fs';
+  import { onMount } from "svelte";
+  import { fade } from "svelte/transition";
   import { open } from '@tauri-apps/api/dialog';
-  import { config } from "../stores/config";
-  import { state } from "../stores/state";
+  import { exists } from '@tauri-apps/api/fs';
   import Tooltip from "../components/Tooltip.svelte";
-  const all = ["default", "curseforge", "prism", "custom"]
-  let selected: string;
-  let customSelected: string
-  let path: string | string[];
-  let validPath: boolean = true;
-  let launchers: { name: string; path: string; }[];
+  import { state } from "../stores/state";
+  import { config } from "../stores/config";
+  
+  let launcherList = ["default", "curseforge", "prism", "custom"]
+  let knownLaunchers: {name: string, path: string}[];
+  let selectedLauncher: string;
 
-  function select(e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement; }) {
-    if (selected == undefined) {
-      document.getElementById("selectDiv").setAttribute("style", "top: 45%;")
-    }
-    all.forEach(e => {
-          let _e = document.getElementById(e)
-          _e.removeAttribute("value")
-    })
-    e.currentTarget.setAttribute("value", "selected")
-    selected = e.currentTarget.id
-  }
+  let customPath: string; 
 
-  async function selectPath() {
-    path = await open({directory: true})
-    if (Array.isArray(path)) {path = path[0]}
-  }
-
-  async function init(e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement; }) {
+  async function init() {
     $state.loading = true
-    all.forEach(e => {
-          let _e = document.getElementById(e)
-          _e.removeAttribute("value")
-    })
-    await invoke("init", {
-    chosen: selected == "custom" ?
-      customSelected: selected,
-    path: selected == "custom" ?
-      !path ? "" : path : launchers.find((i) => i.name == selected).path,
-    custom: selected == "custom" ?
-      true : false
-  })
-    await invoke("get_config").then((res) => { config.set(res) })
+    var path = selectedLauncher == "custom" && customPath ? customPath : knownLaunchers.find((launcher) => launcher.name == selectedLauncher).path
+    var launcher = selectedLauncher == "custom" ? "default" : selectedLauncher
+    
+    await invoke("init", {chosen: launcher, path: path, custom: selectedLauncher == "custom"})
+    await invoke("get_config").then(res => { config.set(res) })
     $state.loading = false
   }
 
-  async function get_known() {
-    let known: Array<{name: string, path: string}> = await invoke("get_launchers")
-    let unknown = all.slice(0, 3).filter(function(obj) { return known.map((i) => i.name).indexOf(obj) == -1; });
-    if (unknown.length > 0) {
-      unknown.forEach((e) => {
-        let _e = document.getElementById(e)
-        _e.setAttribute("disabled", "true");
-        _e.removeAttribute("value")
-      })
-    }
-    launchers = known
-  }
-
-  async function valid_path() {
-    if (Array.isArray(path)) {path = path[0]}
-    let known = await exists(path)
-    if (!known && path != "") {
-      validPath = false
+  async function validateCustomOptions() {
+    if (await exists(customPath)) {
+      document.getElementById("custom-confirm").removeAttribute("disabled")
     } else {
-      validPath = true
+      document.getElementById("custom-confirm").setAttribute("disabled", "")
     }
   }
 
-  get_known()
+  function selectLauncher(target: EventTarget & HTMLButtonElement) {
+    if (!selectedLauncher) {
+      document.getElementById("select-row").setAttribute("style", "top: 40%")
+    }
+
+    selectedLauncher = target.id
+    target.setAttribute("value", "selected")
+    launcherList.forEach((id) => {
+      if (target.id != id) {
+        document.getElementById(id).removeAttribute("value")
+      }
+    })
+  }
+
+  async function selectPath() {
+    var path = await open({directory: true})
+    if (Array.isArray(path)) {customPath = path[0]} else customPath = path
+    await validateCustomOptions();
+  }
+
+  onMount(async () => {
+    var known: {name: string, path: string}[] = await invoke("get_launchers")
+    var unknown = launcherList.slice(0, 3).filter(function(obj) { return known.map((i) => i.name).indexOf(obj) == -1; });
+
+    unknown.forEach((id) => {
+      var element = document.getElementById(id)
+      element.setAttribute("disabled", "");
+    })
+    
+    knownLaunchers = known
+  })
 </script>
 
 <main>
-  <div class="wrapper">
-    <div id="selectDiv" class="row; selectLauncher">    
-      <Tooltip tip="default minecraft launcher" top><button on:click={(e) => {select(e)}} id="default"><img src="./mc_logo.png" alt="default" /></button></Tooltip>
-      <Tooltip tip="curseforge launcher" top><button on:click={(e) => {select(e)}} id="curseforge"><img src="./curseforge.png" alt="curseforge" /></button></Tooltip>
-      <Tooltip tip="prism launcher" top><button on:click={(e) => {select(e)}} id="prism"><img src="./prism.png" alt="prism" /></button></Tooltip>
-      <Tooltip tip="custom/any" top><button on:click={(e) => {select(e)}} id="custom" style="transform: translateY(0.6em);"><img src="./custom.png" alt="prism" style="transform: translateY(0.3em);"/></button></Tooltip>
-    </div>
-    {#if selected != "custom" && selected != undefined}
-      <button on:click={(e) => init(e)} class="confirmButton bottomEl">confirm selection</button>
-    {:else if selected == "custom"}
-      <div class="customDiv bottomEl">
-        <li style="list-style: none;">
-          <i><input bind:value={path} on:change={valid_path} type="text" placeholder="custom install location"></i>
-          <i><button class="selectPath" on:click={selectPath}><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M64 480H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H298.5c-17 0-33.3-6.7-45.3-18.7L226.7 50.7c-12-12-28.3-18.7-45.3-18.7H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64z"/></svg></button></i>
-        </li>
-        <select bind:value={customSelected}>
-          <option value="default">default</option>
-          <option value="curseforge">curseforge</option>
-          <option value="prism">prism</option>
-        </select>
-        {#if validPath}
-        <button on:click={(e) => init(e)} class="customConfirm">confirm</button>  
-        {:else}
-        <Tooltip tip="install location invalid!" top><button class="customConfirm" style="transform: translateX(0%);" disabled>confirm</button></Tooltip>
-        {/if}
-        
-      </div>
-    {/if}
+  <div id="select-row">
+    <Tooltip tip="default minecraft launcher" top><button on:click={(e) => {selectLauncher(e.currentTarget)}} id="default" class="launcher-button"><img src="./mc_logo.png" alt="default" /></button></Tooltip>
+    <Tooltip tip="curseforge launcher" top><button on:click={(e) => {selectLauncher(e.currentTarget)}} id="curseforge" class="launcher-button"><img src="./curseforge.png" alt="curseforge" /></button></Tooltip>
+    <Tooltip tip="prism launcher" top><button on:click={(e) => {selectLauncher(e.currentTarget)}} id="prism" class="launcher-button"><img src="./prism.png" alt="prism" /></button></Tooltip>
+    <Tooltip tip="custom/any" top><button on:click={(e) => {selectLauncher(e.currentTarget)}} id="custom" class="launcher-button"><span style="font-size: 2.5rem;">?</span></button></Tooltip>
   </div>
+
+  {#if selectedLauncher}
+    <div id="confirm-wrapper" transition:fade="{{duration: 200}}">
+      {#if selectedLauncher != "custom"}
+        <button on:click={init}>confirm</button>
+      {:else}
+        <li style="list-style: none;">
+          <i><input bind:value={customPath} on:change={validateCustomOptions} type="text" placeholder="custom install location"></i>
+          <i><button id="select-path" on:click={selectPath}><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M64 480H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H298.5c-17 0-33.3-6.7-45.3-18.7L226.7 50.7c-12-12-28.3-18.7-45.3-18.7H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64z"/></svg></button></i>
+        </li>
+
+        <button id="custom-confirm" on:click={init} disabled>confirm</button>
+      {/if}
+    </div>
+  {/if}
 </main>
 
 <style>
-  .wrapper {
-    transform: translateX(-50%) translateY(-50%);
+  button, input {
+    background-color: rgba(0, 0, 0, 0.3)
+  }
+
+  #select-row {
+    position: absolute;
     top: 50%;
     left: 50%;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: #2f2f2f;
+    transform: translate(-50%, -50%); 
+    transition: .5s;
+    display: flex;
   }
-  .selectLauncher {
-    transform: translateX(-50%) translateY(-50%);
-    top: 50%;
+
+  #confirm-wrapper {
+    position: absolute;
+    bottom: 35%;
     left: 50%;
-    position: absolute;
-    transition: 0.2s;
+    transform: translate(-50%); 
   }
-  .selectLauncher button {
-    width: 6em;
-    height: 6em;
-    transition: 0.2s;
-  }
-  .selectLauncher :global(button[value="selected"]) {
-    transform: scale(105%);
-    border-color: #1c7841;
-  }
-  .selectLauncher button:disabled {
-    background-color: rgb(59, 59, 59);
-    cursor: default;
-  }
-  .customDiv {
-    display: grid;
-    gap: 1em;
-  }
-  .selectPath {
-    margin: 0;
-    padding: 0.5em;
-    width: 2.25em;
-    height: 2.25em;
-    transform: translateY(0.15em);
-  }
-  .selectPath svg {
+
+  #select-path {
     fill: white;
-    width: 1em;
-    height: 1em;
+    width: 2.5em;
+    height: 2.5em;
+    transform: translateY(.25rem);
   }
-  .confirmButton {
-    padding: 1em;
-    background-color: #0d3b20;
-  }
-  .customConfirm {
-    padding: 0.8em;
-    background-color: #0d3b20;
-    width: 50%;
-    transform: translateX(50%);
-  }
-  .customConfirm:disabled {
-    background-color: rgb(59, 59, 59);
-    cursor: default;
-  }
-  .customConfirm:disabled:hover {
-      border-color: rgb(59, 59, 59);
-    }
-  .bottomEl {
+
+  #custom-confirm {
     position: absolute;
-    transform: translateX(-50%) translateY(-50%);
-    top: 70%;
+    bottom: -3rem;
     left: 50%;
+    transform: translate(-50%); 
   }
-  option {
-    background-color: #0f0f0fb9;
-    
+
+  .launcher-button {
+    width: 5rem;
+    height: 5rem;
+    margin: .2rem;
+    transform: scale(95%);
+    transition: .2s;
+  }
+
+  :global(.launcher-button[value="selected"]) {
+    transform: scale(1);
+    box-shadow: 0 0 5px 0 rgba(37, 148, 81, 0.2);
   }
 </style>

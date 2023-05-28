@@ -7,7 +7,7 @@
   import Main from "./lib/Main.svelte";
   import Welcome from "./lib/Welcome.svelte";
 
-  async function init() {
+  onMount(async () => {
     await invoke("get_config").then(async (c) => {
       config.set(c);
     });
@@ -19,15 +19,12 @@
       }
     })
     $state.loading = false
-  }
-
-  onMount(async () => {
-    init();
   });
-  // todo! selecting path for ahms launcher and other launchers
 </script>
 
-<main class="container">
+<main>
+  <div id="background" class="full"></div>
+
   {#if $state.loading}
     <Loading />
   {:else if !$config || $config.init == false}
@@ -36,3 +33,18 @@
     <Main />
   {/if}
 </main>
+
+<style>
+  #background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+
+    background-image: url("https://github.com/Hbarniq/ahms/raw/main/assets/backgrounds/3.png");
+    background-size: cover;
+    filter: blur(3px) brightness(80%);
+  }
+</style>

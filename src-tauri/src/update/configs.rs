@@ -42,7 +42,7 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
                             profile_type: "custom".into(),
                             created: Utc::now(),
                             last_version_id: ResolveData::get().await.unwrap().modpack.mod_loader_version,
-                            icon: format!("data:image/png;base64,{}", BASE64.encode(reqwest::get("https://raw.githubusercontent.com/Hbarniq/ahms/main/assets/icon.png").await.unwrap().bytes().await.unwrap())),
+                            icon: format!("data:image/png;base64,{}", BASE64.encode(reqwest::get("https://cdn.discordapp.com/attachments/1050691362128924743/1112084612060033104/wFc68vW.png").await.unwrap().bytes().await.unwrap())),
                             other
                         },
                     );

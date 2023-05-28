@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use chrono::{Utc, DateTime};
+use ferinth::structures::project::Project;
+use furse::structures::mod_structs::Mod;
 use serde::{Serialize, Deserialize};
 use serde_json::{Map, Value};
 
@@ -34,4 +36,10 @@ pub struct Profile {
     pub icon: String,
     #[serde(flatten)]
     pub other: Map<String, Value>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum CombinedProjects {
+  ModrinthProject(Project),
+  CurseForgeMod(Mod),
 }

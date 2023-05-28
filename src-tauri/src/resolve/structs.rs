@@ -64,6 +64,15 @@ impl ResolveData {
     }
 }
 
+#[derive(Serialize)]
+pub struct Launcher {
+  name: String,
+  path: String
+}
+
+impl Launcher {
+    pub fn new(name: String, path: String) -> Self { Self { name, path } }
+}
 pub struct LauncherPath;
 impl LauncherPath { // bunch of path declarations
     pub fn mclauncher() -> PathBuf {

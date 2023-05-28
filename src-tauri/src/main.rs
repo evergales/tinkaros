@@ -4,10 +4,11 @@ pub mod update;
 pub mod resolve;
 
 use std::{fs::{self, File}, path::PathBuf, env::consts, process::Command, time::{SystemTime, UNIX_EPOCH}};
-use tauri::{api::path, Config};
 use serde::{Serialize, Deserialize};
-use resolve::{structs::{AppConfig, ResolveData, Tinkaros, LauncherPath}, config::{write_config, get_config}};
-use update::{mods::update_mods, status::{update_progress, update_status}, configs::resolve_configs};
+use resolve::{structs::{AppConfig, ResolveData, Tinkaros, ModIdentifier}, config::{write_config, get_config}};
+use update::{mods::{update_mods, get_projects_from_ids}, status::{update_progress, update_status}, configs::resolve_configs, structs::CombinedProjects};
+
+use crate::resolve::config::get_launchers;
 
 #[derive(Serialize, Deserialize, Default)]
 struct VersionFile {
@@ -22,47 +23,15 @@ struct VersionRes {
   last_updated: u64
 }
 
-#[derive(Serialize)]
-struct Launcher {
-  name: String,
-  path: String
-}
-
-impl Launcher {
-    fn new(name: String, path: String) -> Self { Self { name, path } }
-}
-
 #[tauri::command]
 fn init(chosen: String, path: String, custom: bool) {
   write_config(AppConfig::new(true, chosen, path, custom));
 }
 
 #[tauri::command]
-async fn get_launchers() -> Vec<Launcher> {
-  let mut found: Vec<Launcher> = Vec::new();
-
-  if LauncherPath::mclauncher().exists() {
-    let path = path::app_config_dir(&Config::default()).unwrap().join(r"ahms/game");
-    found.push(Launcher::new("default".to_string(), path.to_string_lossy().to_string()));
-  }
-
-  if LauncherPath::curseforge().exists() {
-    let path = LauncherPath::curseforge_instance();
-    found.push(Launcher::new("curseforge".to_string(), path.to_string_lossy().to_string()))
-  }
-
-  if LauncherPath::prism().exists() {
-    let path = LauncherPath::prism_instance();
-    found.push(Launcher::new("prism".to_string(), path.to_string_lossy().to_string()))
-  }
-
-  found
-}
-
-#[tauri::command]
 async fn update(app: tauri::AppHandle, launcher: String, path: String, custom: bool) {
   let _path = PathBuf::from(path);
-  fs::create_dir_all(&_path.join("mods")).expect("unable to resolve dirs");
+  fs::create_dir_all(_path.join("mods")).expect("unable to resolve dirs");
 
   update_status("preparing", &app);
   update_mods(&_path, &app).await;
@@ -72,6 +41,30 @@ async fn update(app: tauri::AppHandle, launcher: String, path: String, custom: b
 
   update_status("done!", &app);
   update_progress(100, &app);
+}
+
+#[tauri::command]
+async fn list_mod_projects(app: tauri::AppHandle) -> Vec<CombinedProjects> {
+  let data = ResolveData::get().await.expect("unable to resolve configs");
+
+  let mut modrinth_ids: Vec<String> = Vec::new();
+  let mut curseforge_ids: Vec<i32> = Vec::new();
+
+  for mod_item in &data.modpack.mods {
+      match &mod_item.identifier {
+          ModIdentifier::ModrinthProject(id) => modrinth_ids.push(id.clone()),
+          ModIdentifier::CurseForgeProject(id) => curseforge_ids.push(id.to_owned()),
+      }
+  }
+
+  let mut result = get_projects_from_ids(modrinth_ids, curseforge_ids, &app).await.expect("unable to list mods");
+
+  result.sort_by_key(|project| match project {
+    CombinedProjects::ModrinthProject(project) => project.slug.to_owned(),
+    CombinedProjects::CurseForgeMod(mod_) => mod_.slug.to_owned()
+  });
+
+  result
 }
 
 #[tauri::command]
@@ -140,7 +133,7 @@ async fn check_update(app: tauri::AppHandle) -> (bool, Tinkaros) {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![init, get_config, get_launchers, update, log_update, get_version, explorer, check_installed, check_update])
+        .invoke_handler(tauri::generate_handler![init, get_config, get_launchers, update, log_update, get_version, list_mod_projects, explorer, check_installed, check_update])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

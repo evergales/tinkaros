@@ -68,6 +68,8 @@
         "fullscreen": false,
         "width": 1000,
         "height": 600,
+        "minWidth": 900,
+        "minHeight": 500,
         "resizable": true,
         "title": "mci reloaded",
         "theme": "Dark"

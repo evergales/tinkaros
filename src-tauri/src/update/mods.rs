@@ -6,7 +6,7 @@ use tokio::{sync::Semaphore, fs::File, io::AsyncWriteExt};
 
 use crate::resolve::structs::{ResolveData, ModVersion};
 
-use super::{new_modrinth, new_curseforge, status::{update_progress, update_status}};
+use super::{new_modrinth, new_curseforge, status::{update_progress, update_status}, structs::CombinedProjects};
 
 pub async fn update_mods(path: &Path, app: &tauri::AppHandle) {
     let path = path.join("mods");
@@ -52,7 +52,7 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) {
     let client = Arc::new(Client::new());
     let app = Arc::new(app.clone());
 
-
+    update_status("updating mods", &app);
     let tasks = to_install.into_iter().map(|(filename, url)| {
         let semaphore = Arc::clone(&semaphore);
         let client = Arc::clone(&client);
@@ -63,7 +63,6 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) {
         tokio::spawn(async move {
             let permit = semaphore.acquire().await.unwrap();
 
-            update_status(&format!("updating {}", filename.replace(".jar", "")), &app);
             download_file(&client, &path.join(filename), &url).await.expect("could not download file");
 
             *progress.lock().unwrap() += progress_per_mod;
@@ -115,4 +114,20 @@ pub async fn download_file(client: &Client, path: &Path, url: &str) -> Result<()
     }
 
     Ok(())
+}
+
+pub async fn get_projects_from_ids(modrinth_ids: Vec<String>, curseforge_ids: Vec<i32>, app: &tauri::AppHandle) -> Result<Vec<CombinedProjects>, Box<dyn std::error::Error>> {
+    let modrinth = new_modrinth(app)?;
+    let curseforge = new_curseforge();
+
+    let modrinth_projects = modrinth.get_multiple_projects(&modrinth_ids.iter().map(|s| s.as_str()).collect::<Vec<&str>>()).await?;
+    let curseforge_mods = curseforge.get_mods(curseforge_ids).await?;
+
+    let combined: Vec<CombinedProjects> = modrinth_projects
+        .into_iter()
+        .map(CombinedProjects::ModrinthProject)
+        .chain(curseforge_mods.into_iter().map(CombinedProjects::CurseForgeMod))
+        .collect();
+    
+    Ok(combined)
 }
