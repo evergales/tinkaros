@@ -1,5 +1,5 @@
 [package]
-name = "mci-reloaded"
+name = "tinkaros"
 version = "0.0.0"
 description = "An updater/launcher for AHMS"
 authors = ["Hbarni"]

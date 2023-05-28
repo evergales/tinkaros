@@ -1714,26 +1714,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
-name = "mci-reloaded"
-version = "0.0.0"
-dependencies = [
- "base64 0.21.0",
- "chrono",
- "ferinth",
- "fs_extra",
- "furse",
- "futures-util",
- "reqwest",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tokio",
- "toml 0.7.4",
- "zip",
-]
-
-[[package]]
 name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3383,6 +3363,26 @@ dependencies = [
  "libc",
  "num_threads",
  "serde",
+]
+
+[[package]]
+name = "tinkaros"
+version = "0.0.0"
+dependencies = [
+ "base64 0.21.0",
+ "chrono",
+ "ferinth",
+ "fs_extra",
+ "furse",
+ "futures-util",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tokio",
+ "toml 0.7.4",
+ "zip",
 ]
 
 [[package]]

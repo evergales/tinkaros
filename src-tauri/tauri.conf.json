@@ -7,7 +7,7 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "mci-reloaded",
+    "productName": "tinkaros",
     "version": "0.1.7"
   },
   "tauri": {
@@ -41,7 +41,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.hbarni.mcinstall",
+      "identifier": "com.hbarni.tinkaros",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
@@ -71,7 +71,7 @@
         "minWidth": 900,
         "minHeight": 500,
         "resizable": true,
-        "title": "mci reloaded",
+        "title": "tinkaros",
         "theme": "Dark"
       }
     ]

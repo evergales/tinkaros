@@ -37,11 +37,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: __VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
-          releaseName: 'mci-reloaded __VERSION__'
+          releaseName: 'tinkaros __VERSION__'
           releaseBody: |
             compiled files for __VERSION__:
-            - **windows 10/11 => mci-reloaded___VERSION___x64_en-US.msi**
-            - linux => mci-reloaded___VERSION___amd64.AppImage
-            - linux-deb => mci-reloaded___VERSION___amd64.deb
+            - **windows 10/11 => tinkaros___VERSION___x64_en-US.msi**
+            - linux => tinkaros___VERSION___amd64.AppImage
+            - linux-deb => tinkaros___VERSION___amd64.deb
           releaseDraft: true
           prerelease: false
