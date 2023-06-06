@@ -4,15 +4,15 @@ use futures_util::{StreamExt, future::join_all};
 use reqwest::Client;
 use tokio::{sync::Semaphore, fs::File, io::AsyncWriteExt};
 
-use crate::resolve::structs::{ResolveData, ModVersion};
+use crate::{resolve::structs::{ResolveData, ModVersion}, error::TinkarosError};
 
 use super::{new_modrinth, new_curseforge, status::{update_progress, update_status}, structs::CombinedProjects};
 
-pub async fn update_mods(path: &Path, app: &tauri::AppHandle) {
+pub async fn update_mods(path: &Path, app: &tauri::AppHandle) -> Result<(), TinkarosError> {
     let path = path.join("mods");
-    let modrinth = new_modrinth(app).expect("unable to create modrinth client");
+    let modrinth = new_modrinth(app).unwrap();
     let curseforge = new_curseforge();
-    let data = ResolveData::get().await.expect("unable to resolve configs");
+    let data = ResolveData::get().await.map_err(|err| TinkarosError::DataInvalid(err.to_string()))?;
 
     let mut modrinth_hashes = Vec::new();
     let mut curseforge_ids = Vec::new();
@@ -52,7 +52,7 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) {
     let client = Arc::new(Client::new());
     let app = Arc::new(app.clone());
 
-    update_status("updating mods", &app);
+    update_status("updating mods", &app)?;
     let tasks = to_install.into_iter().map(|(filename, url)| {
         let semaphore = Arc::clone(&semaphore);
         let client = Arc::clone(&client);
@@ -63,10 +63,10 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) {
         tokio::spawn(async move {
             let permit = semaphore.acquire().await.unwrap();
 
-            download_file(&client, &path.join(filename), &url).await.expect("could not download file");
+            download_file(&client, &path.join(filename), &url).await.expect("unable to download mod");
 
             *progress.lock().unwrap() += progress_per_mod;
-            update_progress(*progress.lock().unwrap() as i32, &app);
+            update_progress(*progress.lock().unwrap() as i32, &app).unwrap();
             
             drop(permit);
         })
@@ -75,14 +75,14 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) {
     let results = join_all(tasks).await;
     for result in results {
         if let Err(err) = result {
-            eprintln!("An error occurred: {}", err);
+            return Err(TinkarosError::Update(err.to_string()));
         }
     }
 
-    update_progress(85, &app);
+    update_progress(85, &app)?;
 
     // clean up old mods
-    path.read_dir().unwrap()
+    path.read_dir()?
     .filter_map(|entry| entry.ok())
     .filter(|entry| {
         let file_path = entry.path();
@@ -94,6 +94,7 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) {
         std::fs::remove_file(file.path()).expect("unable to remove file")
     });
     
+    Ok(())
 }
 
 async fn file_exists(filename: &str, path: &Path) -> bool {

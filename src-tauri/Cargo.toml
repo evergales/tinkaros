@@ -27,6 +27,7 @@ ferinth = "2.8.0"
 furse = "1.5.9"
 tokio = "1.28.1"
 zip = "0.6.6"
+thiserror = "1.0.40"
 
 [features]
 # by default Tauri runs in production mode

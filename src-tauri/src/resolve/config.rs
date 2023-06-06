@@ -1,30 +1,32 @@
 use std::fs;
 use tauri::{Config, api::path};
 
+use crate::error::TinkarosError;
+
 use super::structs::{AppConfig, LauncherPath, Launcher};
 
 #[tauri::command]
-pub fn get_config() -> AppConfig {
-    let config = path::app_config_dir(&Config::default()).expect("Couldnt load config").join("ahms/config.toml");
+pub fn get_config() -> Result<AppConfig, TinkarosError> {
+    let config = path::app_config_dir(&Config::default()).unwrap().join("ahms/config.toml");
     if !config.is_file() {
-        fs::create_dir_all(config.parent().unwrap()).expect("unable to create config parent dirs");
-        return AppConfig::default();
+        fs::create_dir_all(config.parent().unwrap())?;
+        return Ok(AppConfig::default());
     }
-    let file = fs::read_to_string(&config).expect("unable to read config");
+    let file = fs::read_to_string(&config)?;
     let confs: AppConfig = toml::from_str(&file).unwrap_or_default();
-    confs
+    Ok(confs)
 }
 
-pub fn write_config(config: AppConfig) -> AppConfig {
-    let config_path = path::app_config_dir(&Config::default()).expect("Couldnt load config").join("ahms/config.toml");
+pub fn write_config(config: AppConfig) -> Result<AppConfig, TinkarosError> {
+    let config_path = path::app_config_dir(&Config::default()).unwrap().join("ahms/config.toml");
     if !config_path.is_file() {
-        fs::create_dir_all(config_path.parent().unwrap()).expect("unable to create parent directory of file");
-        fs::File::create(&config_path).expect("unable to create file");
+        fs::create_dir_all(config_path.parent().unwrap())?;
+        fs::File::create(&config_path).map_err(|_| TinkarosError::ConfigNotFound)?;
     }
 
-    let toml_string = toml::to_string(&config).expect("unable to convert back to toml");
-    fs::write(config_path, toml_string).expect("unable to write file");
-    config
+    let toml_string = toml::to_string(&config).map_err(|_| TinkarosError::ConfigInvalid)?;
+    fs::write(config_path, toml_string)?;
+    Ok(config)
 }
 
 #[tauri::command]
