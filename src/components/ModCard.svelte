@@ -30,16 +30,16 @@
 <main>
     <div id="card" class="container" transition:fade="{{duration: 200}}" on:click={openUrl} on:keydown={openUrl}>
     {#if modrinth_mod}
-      <img src="./modrinth.png" alt="" id="platform-logo">
-      <img src="{modrinth_mod.icon_url}" alt="icon" id="card-icon">
+      <img loading="lazy" src="./modrinth.png" alt="" id="platform-logo">
+      <img loading="lazy" src="{modrinth_mod.icon_url}" alt="icon" id="card-icon">
 
       <div id="card-content">
         <p id="card-title">{modrinth_mod.title}</p>
         <p style="font-size: .6rem; margin: 0;">{truncateDesctiption(modrinth_mod.description, 70)}</p>
       </div>
     {:else if curseforge_mod}
-      <img src="./curseforge.png" alt="" id="platform-logo">
-      <img src="{curseforge_mod.logo?.url}" alt="icon" id="card-icon">
+      <img loading="lazy" src="./curseforge.png" alt="" id="platform-logo">
+      <img loading="lazy" src="{curseforge_mod.logo?.url}" alt="icon" id="card-icon">
 
       <div id="card-content">
         <p id="card-title">{curseforge_mod.name}</p>
