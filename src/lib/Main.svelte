@@ -11,6 +11,7 @@
   import ModCard from "../components/ModCard.svelte";
   import ChangelogCard from "../components/ChangelogCard.svelte";
   import newToast from "../scripts/toasts";
+  import Loading from "../components/Loading.svelte";
   
   let initial = false
   let lastUpdated: string | null = null
@@ -90,14 +91,22 @@
     </div>
 
     <div class="container">
-      {#each changelog as log}
+      {#if changelog.length == 0}
+        <Loading />
+      {:else}
+        {#each changelog as log}
         <ChangelogCard log={log} />
-      {/each}
+        {/each}
+      {/if}
     </div>
     <div class="container">
-      {#each modlist as mod}
+      {#if modlist.length == 0}
+        <Loading />
+      {:else}
+        {#each modlist as mod}
         <ModCard any_mod={mod} />
-      {/each}
+        {/each}
+      {/if}
     </div>
   </div>
   

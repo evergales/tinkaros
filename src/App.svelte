@@ -6,6 +6,9 @@
   import Main from "./lib/Main.svelte";
   import Welcome from "./lib/Welcome.svelte";
   import newToast from "./scripts/toasts";
+  import Loading from "./components/Loading.svelte";
+  import { state } from "./stores/state";
+  import { fade } from "svelte/transition";
 
   onMount(async () => {
     await invoke("get_config").then(async (c) => {
@@ -17,6 +20,7 @@
         newToast("info", "update available!", "Tinkaros has a new update available it is recommended you update!", 0)
       }
     }).catch(err => { newToast("error", "unable to find tinkaros updates", err) })
+    $state.loading = false
   });
 </script>
 
@@ -26,6 +30,12 @@
     <BootstrapToast theme="dark" {data} />
   </ToastContainer>
 
+  {#if $state.loading}
+    <div id="loading-background" transition:fade="{{duration: 200}}">
+      <Loading />
+    </div>
+  {/if}
+
   {#if !$config || $config.init == false}
     <Welcome />
   {:else}
@@ -34,6 +44,18 @@
 </main>
 
 <style>
+  #loading-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    background: rgba(48, 48, 48, 0.6) !important;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  }
+
   #background {
     position: absolute;
     top: 0;

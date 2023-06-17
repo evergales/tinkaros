@@ -1,5 +1,6 @@
 <script lang="ts">
   import { open } from '@tauri-apps/api/shell';
+  import { fade } from 'svelte/transition';
   export let any_mod: Mod;
 
   let curseforge_mod: CurseForgeMod = any_mod.CurseForgeMod;
@@ -27,7 +28,7 @@
 </script>
 
 <main>
-    <div id="card" class="container" on:click={openUrl} on:keydown={openUrl}>
+    <div id="card" class="container" transition:fade="{{duration: 200}}" on:click={openUrl} on:keydown={openUrl}>
     {#if modrinth_mod}
       <img src="./modrinth.png" alt="" id="platform-logo">
       <img src="{modrinth_mod.icon_url}" alt="icon" id="card-icon">

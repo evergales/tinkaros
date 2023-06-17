@@ -1,62 +1,60 @@
 <script>
     import { fade } from "svelte/transition";
 </script>
-<main style="background-color: #2f2f2f;">
-    <div class="loading-div" style="vertical-align: middle; justify-content: center; display: flex;" transition:fade>
-      <div class="loading_box">
-        <div class="loading"></div>
-        <h1 style="color: #9b9b9b;">loading</h1>
-      </div>
-    </div>
-</main>
+
+<div id="loading-wrapper">
+  <div class="loading" transition:fade="{{duration: 200}}">
+    <span></span>
+    <span></span>
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
 
 <style>
-.loading-div {
-  transform: translateX(-50%) translateY(-50%);
+#loading-wrapper {
+  position: absolute;
+  position: absolute;
   top: 50%;
   left: 50%;
-  position: absolute;
-  background-color: rgba(37, 37, 37, 0.5);
-  width: 100%;
-  height: 100%;
+  transform: translate(-50%, -50%);
 }
 
-.loading_box {
-  transform: translateX(-50%) translateY(-50%);
-  top: 50%;
-  left: 50%;
-  position: absolute;
-  background-color: rgb(24, 24, 24);
-  display: flex;
-  padding: 2em;
-  border-radius: 1.5em;
+.loading span {
+  display: inline-block;
+  vertical-align: middle;
+  width: .6em;
+  height: .6em;
+  margin: .19em;
+  background: #5fdb9d;
+  border-radius: .6em;
+  animation: loading 1s infinite alternate;
 }
 
-.loading {
-  display: flex;
-  justify-content: center;
-  padding-top: 1em;
-  padding-right: 0.3em;
+.loading span:nth-of-type(2) {
+  background: #4cce8d;
+  animation-delay: 0.2s;
 }
-
-.loading::after {
-  content: "";
-  width: 20px;
-  height: 20px;
-  border: 6px solid #9b9b9b;
-  border-top-color: #1c7841;
-  border-radius: 50%;
-  transform: rotate(0.16turn);
-  animation: loading 1s ease infinite;
+.loading span:nth-of-type(3) {
+  background: #3ec280;
+  animation-delay: 0.4s;
+}
+.loading span:nth-of-type(4) {
+  background: #2bb16e;
+  animation-delay: 0.6s;
+}
+.loading span:nth-of-type(5) {
+  background: #1e8f56;
+  animation-delay: .8s;
 }
 
 @keyframes loading {
-  from {
-    transform: rotate(0turn);
+  0% {
+    opacity: 0;
   }
-  
-  to {
-    transform: rotate(1turn);
+  100% {
+    opacity: 1;
   }
 }
 </style>
