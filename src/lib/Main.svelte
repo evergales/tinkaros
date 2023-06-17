@@ -10,6 +10,7 @@
   import Progress from "../components/Progress.svelte";
   import ModCard from "../components/ModCard.svelte";
   import ChangelogCard from "../components/ChangelogCard.svelte";
+  import newToast from "../scripts/toasts";
   
   let initial = false
   let lastUpdated: string | null = null
@@ -21,8 +22,8 @@
     var button = document.getElementById("update-button")
     button.setAttribute("disabled", "")
     $state.updating = true
-    await invoke("update", { launcher: $config.launcher, path: $config.path, custom: $config.custom })
-    await invoke("log_update", { path: $config.path })
+    await invoke("update", { launcher: $config.launcher, path: $config.path, custom: $config.custom }).catch(err => { newToast("error", "error while updating", err ) })
+    await invoke("log_update", { path: $config.path }).catch(err => { newToast("error", "error while logging update", err ) })
     updateVersion()
     setTimeout(() => {
       button.removeAttribute("disabled")
@@ -33,7 +34,7 @@
   }
 
   async function updateVersion() {
-    await invoke("get_version", { path: $config.path }).then(async (res: any) => {
+    await invoke("get_version", { path: $config.path }).catch(err => { newToast("error", "error while logging update", err) }).then(async (res: any) => {
       lastUpdated = res.last_updated == 0 ? null : timeSince(res.last_updated);
       isUpdated = res.version != res.latest_version ? false : true
     })
@@ -42,7 +43,7 @@
   onMount(async () => {
     updateVersion()
     setInterval(() => { updateVersion() }, 30000)
-    initial = await invoke("check_installed", { path: $config.path }) == true ? false : true
+    initial = await invoke("check_installed", { path: $config.path }).catch(err => { newToast("error", undefined, err) }) == true ? false : true
 
     listen("status", (event: any) => {
       $state.updateState = event.payload.status
@@ -52,7 +53,7 @@
       $state.progress = event.payload.progress
     })
 
-    invoke("list_mod_projects").then((res: Mod[]) => modlist = res)
+    invoke("list_mod_projects").then((res: Mod[]) => modlist = res).catch(err => { newToast("error", "unable to list mods", err) })
     changelog = JSON.parse(await (await fetch("https://gist.githubusercontent.com/Hbarniq/86838647fb0cc4dce6913d2d73ce7fc4/raw/ahms-changelog.json")).text())
   })
 </script>
