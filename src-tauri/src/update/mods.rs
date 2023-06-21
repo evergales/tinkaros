@@ -1,6 +1,6 @@
 use std::{path::Path, collections::HashMap, sync::{Arc, Mutex}};
 
-use futures_util::{StreamExt, future::join_all};
+use futures_util::{StreamExt, future::{join_all, join}};
 use reqwest::Client;
 use tokio::{sync::Semaphore, fs::File, io::AsyncWriteExt};
 
@@ -121,13 +121,17 @@ pub async fn get_projects_from_ids(modrinth_ids: Vec<String>, curseforge_ids: Ve
     let modrinth = new_modrinth(app)?;
     let curseforge = new_curseforge();
 
-    let modrinth_projects = modrinth.get_multiple_projects(&modrinth_ids.iter().map(|s| s.as_str()).collect::<Vec<&str>>()).await?;
-    let curseforge_mods = curseforge.get_mods(curseforge_ids).await?;
+    let modrinth_ids_slice = &modrinth_ids.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
 
-    let combined: Vec<CombinedProjects> = modrinth_projects
+    let modrinth_future = modrinth.get_multiple_projects(modrinth_ids_slice);
+    let curseforge_future = curseforge.get_mods(curseforge_ids);
+
+    let (modrinth_projects, curseforge_mods) = join(modrinth_future, curseforge_future).await;
+
+    let combined: Vec<CombinedProjects> = modrinth_projects?
         .into_iter()
         .map(CombinedProjects::ModrinthProject)
-        .chain(curseforge_mods.into_iter().map(CombinedProjects::CurseForgeMod))
+        .chain(curseforge_mods?.into_iter().map(CombinedProjects::CurseForgeMod))
         .collect();
     
     Ok(combined)
