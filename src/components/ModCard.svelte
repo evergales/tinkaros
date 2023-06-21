@@ -7,7 +7,6 @@
   let modrinth_mod: ModrinthProject = any_mod.ModrinthProject;
 
   function openUrl() {
-    console.log("ayo wtf")
     open(modrinth_mod ? `https://modrinth.com/mod/${modrinth_mod.slug}` : `${curseforge_mod.links.websiteUrl}`)
   }
 

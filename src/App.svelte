@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { config } from "./stores/config";
   import { BootstrapToast, ToastContainer } from "svelte-toasts"
+  import { open } from '@tauri-apps/api/shell';
   import Main from "./lib/Main.svelte";
   import Welcome from "./lib/Welcome.svelte";
   import newToast from "./scripts/toasts";
@@ -15,9 +16,8 @@
       config.set(c);
     }).catch(err => { newToast("error", "unable to load configs", err) });
     invoke("check_update").then(async (r: [boolean, Object]) => {
-      if (r[0]) {       
-        let updatePopup = r[1]
-        newToast("info", "update available!", "Tinkaros has a new update available it is recommended you update!", 0)
+      if (r[0]) {
+        newToast("info", "update available!", "Tinkaros has a new update available it is recommended you update!", 15000, () => { open("https://github.com/Hbarniq/tinkaros/releases/latest") })
       }
     }).catch(err => { newToast("error", "unable to find tinkaros updates", err) })
     $state.loading = false
