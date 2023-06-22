@@ -12,6 +12,10 @@
   import { fade } from "svelte/transition";
 
   onMount(async () => {
+    try { await invoke("check_online"); } catch (err) {
+      return newToast("error", "internet not connected", err);
+    }
+
     await invoke("get_config").then(async (c) => {
       config.set(c);
     }).catch(err => { newToast("error", "unable to load configs", err) });

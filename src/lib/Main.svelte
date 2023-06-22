@@ -23,9 +23,21 @@
     var button = document.getElementById("update-button")
     button.setAttribute("disabled", "")
     $state.updating = true
-    await invoke("update", { launcher: $config.launcher, path: $config.path, custom: $config.custom }).catch(err => { newToast("error", "error while updating", err ) })
+
+    try {
+      await invoke("update", { launcher: $config.launcher, path: $config.path, custom: $config.custom })
+    } catch (err) {
+      finishUpdate()
+      return newToast("error", "error while updating", err );
+    }
+
     await invoke("log_update", { path: $config.path }).catch(err => { newToast("error", "error while logging update", err ) })
     updateVersion()
+    finishUpdate()
+  }
+
+  function finishUpdate() {
+    var button = document.getElementById("update-button")
     setTimeout(() => {
       button.removeAttribute("disabled")
       $state.progress = 0

@@ -32,7 +32,17 @@ fn init(chosen: String, path: String, custom: bool) -> Result<(), TinkarosError>
 }
 
 #[tauri::command]
+async fn check_online() -> Result<(), TinkarosError> {
+  let res = reqwest::get("https://www.cloudflare.com/").await.map_err(|_| TinkarosError::NetworkTimeout)?;
+  match res.status() {
+    reqwest::StatusCode::OK => Ok(()),
+    _ => Err(TinkarosError::NetworkTimeout)
+  }
+}
+
+#[tauri::command]
 async fn update(app: tauri::AppHandle, launcher: String, path: String, custom: bool) -> Result<(), TinkarosError> {
+  check_online().await?;
   let path = PathBuf::from(path);
   fs::create_dir_all(path.join("mods"))?;
 
@@ -137,7 +147,19 @@ async fn check_tauri_update(app: tauri::AppHandle) -> Result<(bool, Tinkaros), T
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![init, get_config, get_launchers, update, log_update, get_version, list_mod_projects, explorer, check_modpack_installed, check_tauri_update])
+        .invoke_handler(tauri::generate_handler![
+          init,
+          get_config,
+          get_launchers,
+          update,
+          log_update,
+          get_version,
+          list_mod_projects, 
+          explorer,
+          check_modpack_installed,
+          check_tauri_update,
+          check_online
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

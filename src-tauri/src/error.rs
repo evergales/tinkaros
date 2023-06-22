@@ -3,6 +3,9 @@ pub enum TinkarosError {
     #[error("error while updating: {0}")]
     Update(String),
 
+    #[error("Timed out! Tinkaros requires an internet connection")]
+    NetworkTimeout,
+
     #[error("unable to fetch mod versions")]
     FetchModVersions,
 
