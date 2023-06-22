@@ -44,7 +44,7 @@
   onMount(async () => {
     updateVersion()
     setInterval(() => { updateVersion() }, 30000)
-    initial = await invoke("check_installed", { path: $config.path }).catch(err => { newToast("error", undefined, err) }) == true ? false : true
+    initial = await invoke("check_modpack_installed", { path: $config.path }).catch(err => { newToast("error", undefined, err) }) == true ? false : true
 
     listen("status", (event: any) => {
       $state.updateState = event.payload.status

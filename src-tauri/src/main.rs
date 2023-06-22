@@ -33,14 +33,14 @@ fn init(chosen: String, path: String, custom: bool) -> Result<(), TinkarosError>
 
 #[tauri::command]
 async fn update(app: tauri::AppHandle, launcher: String, path: String, custom: bool) -> Result<(), TinkarosError> {
-  let _path = PathBuf::from(path);
-  fs::create_dir_all(_path.join("mods"))?;
+  let path = PathBuf::from(path);
+  fs::create_dir_all(path.join("mods"))?;
 
   update_status("preparing", &app)?;
-  update_mods(&_path, &app).await?;
+  update_mods(&path, &app).await?;
   
   update_status("adding required configs", &app)?;
-  resolve_configs(&app, &_path, launcher, custom).await?;
+  resolve_configs(&app, &path, launcher, custom).await?;
 
   update_status("done!", &app)?;
   update_progress(100, &app)?;
@@ -74,11 +74,12 @@ async fn list_mod_projects(app: tauri::AppHandle) -> Result<Vec<CombinedProjects
 
 #[tauri::command]
 async fn log_update(path: String) -> Result<(), TinkarosError> {
-  let mut comment = false;
+  let mut should_add_comment = false;
+  
   let file = PathBuf::from(path).join("version.toml");
   if !file.exists() {
     File::create(&file)?;
-    comment = true;
+    should_add_comment = true;
   }
 
   let str_file = fs::read_to_string(&file)?;
@@ -88,7 +89,7 @@ async fn log_update(path: String) -> Result<(), TinkarosError> {
   data.last_updated = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
 
   let mut toml_string = toml::to_string(&data).unwrap();
-  if comment { toml_string = "#needed for version checking DO NOT TOUCH\n".to_owned() + &toml_string }
+  if should_add_comment { toml_string = "#needed for version checking DO NOT TOUCH\n".to_owned() + &toml_string }
   fs::write(&file, toml_string)?;
 
   Ok(())
@@ -118,25 +119,25 @@ fn explorer(path: &str) {
 }
 
 #[tauri::command]
-fn check_installed(path: &str) -> Result<bool, TinkarosError> {
+fn check_modpack_installed(path: &str) -> Result<bool, TinkarosError> {
   let mut installed = true;
-  let _path = PathBuf::from(path);
-  fs::create_dir_all(&_path)?;
-  if _path.read_dir()?.next().is_none() {
+  let path = PathBuf::from(path);
+  fs::create_dir_all(&path)?;
+  if path.read_dir()?.next().is_none() {
     installed = false
   }
   Ok(installed)
 }
 
 #[tauri::command]
-async fn check_update(app: tauri::AppHandle) -> Result<(bool, Tinkaros), TinkarosError> {
+async fn check_tauri_update(app: tauri::AppHandle) -> Result<(bool, Tinkaros), TinkarosError> {
   let latest = ResolveData::get().await?.tinkaros;
   Ok((tauri::api::version::is_greater(app.package_info().version.to_string().as_str(), &latest.version).unwrap(), latest))
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![init, get_config, get_launchers, update, log_update, get_version, list_mod_projects, explorer, check_installed, check_update])
+        .invoke_handler(tauri::generate_handler![init, get_config, get_launchers, update, log_update, get_version, list_mod_projects, explorer, check_modpack_installed, check_tauri_update])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

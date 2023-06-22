@@ -15,7 +15,7 @@
     await invoke("get_config").then(async (c) => {
       config.set(c);
     }).catch(err => { newToast("error", "unable to load configs", err) });
-    invoke("check_update").then(async (r: [boolean, Object]) => {
+    invoke("check_tauri_update").then(async (r: [boolean, Object]) => {
       if (r[0]) {
         newToast("info", "update available!", "Tinkaros has a new update available it is recommended you update!", 15000, () => { open("https://github.com/Hbarniq/tinkaros/releases/latest") })
       }
