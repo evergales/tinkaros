@@ -49,21 +49,20 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) -> Result<(), Tink
     let progress = Arc::new(Mutex::new(5.0));
 
     let semaphore = Arc::new(Semaphore::new(50)); // 50 max concurrent downloads
-    let client = Arc::new(Client::new());
-    let app = Arc::new(app.clone());
+    let client = Client::new();
 
-    update_status("updating mods", &app)?;
+    update_status("updating mods", app)?;
     let tasks = to_install.into_iter().map(|(filename, url)| {
         let semaphore = Arc::clone(&semaphore);
-        let client = Arc::clone(&client);
-        let app = Arc::clone(&app);
-        let path = path.to_owned();
         let progress = Arc::clone(&progress);
+        let client = client.clone();
+        let app = app.clone();
+        let path = path.clone();
 
         tokio::spawn(async move {
             let permit = semaphore.acquire().await.unwrap();
 
-            download_file(&client, &path.join(filename), &url).await.expect("unable to download mod");
+            download_file(&client, &path.join(&filename), &url).await.unwrap_or_else(|_| panic!("unable to download {filename} from {url}"));
 
             *progress.lock().unwrap() += progress_per_mod;
             update_progress(*progress.lock().unwrap() as i32, &app).unwrap();
@@ -79,7 +78,7 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) -> Result<(), Tink
         }
     }
 
-    update_progress(85, &app)?;
+    update_progress(85, app)?;
 
     // clean up old mods
     path.read_dir()?
