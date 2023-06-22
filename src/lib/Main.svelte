@@ -47,7 +47,7 @@
   }
 
   async function updateVersion() {
-    await invoke("get_version", { path: $config.path }).catch(err => { newToast("error", "error while logging update", err) }).then(async (res: any) => {
+    await invoke("get_version", { path: $config.path }).catch(err => { newToast("error", "error while trying to fetch version", err) }).then(async (res: any) => {
       lastUpdated = res.last_updated == 0 ? null : timeSince(res.last_updated);
       isUpdated = res.version != res.latest_version ? false : true
     })
@@ -55,7 +55,6 @@
 
   onMount(async () => {
     updateVersion()
-    setInterval(() => { updateVersion() }, 30000)
     initial = await invoke("check_modpack_installed", { path: $config.path }).catch(err => { newToast("error", undefined, err) }) == true ? false : true
 
     listen("status", (event: any) => {
