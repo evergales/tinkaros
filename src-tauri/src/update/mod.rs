@@ -10,7 +10,7 @@ pub mod status;
 pub mod configs;
 
 pub fn new_modrinth(app: &tauri::AppHandle) -> Result<Ferinth, ferinth::Error> {
-    return Ferinth::new("tinkaros", Some(app.package_info().version.to_string().as_str()), Some("Hbarni#4164"), None);
+    return Ferinth::new("tinkaros", Some(app.package_info().version.to_string().as_str()), Some("@hbarni/Hbarni#4164"), None);
 }
 
 pub fn new_curseforge() -> Furse {
