@@ -7,11 +7,10 @@ pub struct AppConfig {
     pub init: bool,
     pub launcher: String,
     pub path: String,
-    pub custom: bool
 }
 
 impl AppConfig {
-    pub fn new(init: bool, launcher: String, path: String, custom: bool) -> Self { Self { init, launcher, path, custom } }
+    pub fn new(init: bool, launcher: String, path: String) -> Self { Self { init, launcher, path } }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -10,7 +10,7 @@ use crate::{resolve::structs::{LauncherPath, ResolveData}, get_version, error::T
 
 use super::{status::{update_progress, update_status}, structs::{LauncherProfiles, Profile}, mods::download_file, zip_extract};
 
-pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: String, _custom: bool) -> Result<(), TinkarosError> {
+pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: String) -> Result<(), TinkarosError> {
     let client = Client::new();
     let ver = get_version(path.to_string_lossy().to_string()).await?;
 

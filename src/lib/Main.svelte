@@ -25,7 +25,7 @@
     $state.updating = true
 
     try {
-      await invoke("update", { launcher: $config.launcher, path: $config.path, custom: $config.custom })
+      await invoke("update", { launcher: $config.launcher, path: $config.path })
     } catch (err) {
       finishUpdate()
       return newToast("error", "error while updating", err );

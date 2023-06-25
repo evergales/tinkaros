@@ -20,7 +20,7 @@
     var path = selectedLauncher == "custom" && customPath ? customPath : knownLaunchers.find((launcher) => launcher.name == selectedLauncher).path
     var launcher = selectedLauncher == "custom" ? "default" : selectedLauncher
     
-    await invoke("init", {chosen: launcher, path: path, custom: selectedLauncher == "custom"}).catch(err => { newToast("error", "unable to write config", err ) })
+    await invoke("init", {chosen: launcher, path: path}).catch(err => { newToast("error", "unable to write config", err ) })
     await invoke("get_config").then(res => { config.set(res) }).catch(err => { newToast("error", "unable to load config", err ) })
     $state.loading = false
   }

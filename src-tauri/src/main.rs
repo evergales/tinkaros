@@ -26,8 +26,8 @@ struct VersionRes {
 }
 
 #[tauri::command]
-fn init(chosen: String, path: String, custom: bool) -> Result<(), TinkarosError> {
-  write_config(AppConfig::new(true, chosen, path, custom))?;
+fn init(chosen: String, path: String) -> Result<(), TinkarosError> {
+  write_config(AppConfig::new(true, chosen, path))?;
   Ok(())
 }
 
@@ -41,7 +41,7 @@ async fn check_online() -> Result<(), TinkarosError> {
 }
 
 #[tauri::command]
-async fn update(app: tauri::AppHandle, launcher: String, path: String, custom: bool) -> Result<(), TinkarosError> {
+async fn update(app: tauri::AppHandle, launcher: String, path: String) -> Result<(), TinkarosError> {
   check_online().await?;
   let path = PathBuf::from(path);
   fs::create_dir_all(path.join("mods"))?;
@@ -50,7 +50,7 @@ async fn update(app: tauri::AppHandle, launcher: String, path: String, custom: b
   update_mods(&path, &app).await?;
   
   update_status("adding required configs", &app)?;
-  resolve_configs(&app, &path, launcher, custom).await?;
+  resolve_configs(&app, &path, launcher).await?;
 
   update_status("done!", &app)?;
   update_progress(100, &app)?;
