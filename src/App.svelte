@@ -35,7 +35,7 @@
   </ToastContainer>
 
   {#if $state.loading}
-    <div id="loading-background" transition:fade="{{duration: 200}}">
+    <div class="blur-background" transition:fade="{{duration: 200}}">
       <Loading />
     </div>
   {/if}
@@ -48,18 +48,6 @@
 </main>
 
 <style>
-  #loading-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 2;
-    background: rgba(48, 48, 48, 0.6) !important;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-  }
-
   #background {
     position: absolute;
     top: 0;

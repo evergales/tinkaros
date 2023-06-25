@@ -27,7 +27,7 @@ struct VersionRes {
 
 #[tauri::command]
 fn init(chosen: String, path: String) -> Result<(), TinkarosError> {
-  write_config(AppConfig::new(true, chosen, path))?;
+  write_config(AppConfig::new(true, chosen, path, true, 75, false))?;
   Ok(())
 }
 
@@ -157,6 +157,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
           init,
           get_config,
+          write_config,
           get_launchers,
           update,
           log_update,

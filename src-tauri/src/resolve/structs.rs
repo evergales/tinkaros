@@ -7,10 +7,13 @@ pub struct AppConfig {
     pub init: bool,
     pub launcher: String,
     pub path: String,
+    pub check_tauri_update: bool,
+    pub max_concurrent_downloads: i32,
+    pub bleeding_edge_updates: bool
 }
 
 impl AppConfig {
-    pub fn new(init: bool, launcher: String, path: String) -> Self { Self { init, launcher, path } }
+    pub fn new(init: bool, launcher: String, path: String, check_tauri_update: bool, max_concurrent_downloads: i32, bleeding_edge_updates: bool) -> Self { Self { init, launcher, path, check_tauri_update, max_concurrent_downloads, bleeding_edge_updates } }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

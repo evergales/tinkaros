@@ -4,7 +4,7 @@
   import { fade } from "svelte/transition";
   import { open } from '@tauri-apps/api/dialog';
   import { exists } from '@tauri-apps/api/fs';
-  import Tooltip from "../components/Tooltip.svelte";
+  import { tippy } from "svelte-tippy"
   import { state } from "../stores/state";
   import { config } from "../stores/config";
   import newToast from "../scripts/toasts";
@@ -68,10 +68,10 @@
 
 <main>
   <div id="select-row">
-    <Tooltip tip="default minecraft launcher" top><button on:click={(e) => {selectLauncher(e.currentTarget)}} id="default" class="launcher-button"><img src="./mc_logo.png" alt="default" /></button></Tooltip>
-    <Tooltip tip="curseforge launcher" top><button on:click={(e) => {selectLauncher(e.currentTarget)}} id="curseforge" class="launcher-button"><img src="./curseforge.png" alt="curseforge" /></button></Tooltip>
-    <Tooltip tip="prism launcher" top><button on:click={(e) => {selectLauncher(e.currentTarget)}} id="prism" class="launcher-button"><img src="./prism.png" alt="prism" /></button></Tooltip>
-    <Tooltip tip="custom/any" top><button on:click={(e) => {selectLauncher(e.currentTarget)}} id="custom" class="launcher-button"><span style="font-size: 2.5rem;">?</span></button></Tooltip>
+    <button use:tippy={{ content: "default minecraft launcher" }} on:click={(e) => {selectLauncher(e.currentTarget)}} id="default" class="launcher-button"><img src="./mc_logo.png" alt="default" /></button>
+    <button use:tippy={{ content: "curseforge app" }} on:click={(e) => {selectLauncher(e.currentTarget)}} id="curseforge" class="launcher-button"><img src="./curseforge.png" alt="curseforge" /></button>
+    <button use:tippy={{ content: "prism launcher" }} on:click={(e) => {selectLauncher(e.currentTarget)}} id="prism" class="launcher-button"><img src="./prism.png" alt="prism" /></button>
+    <button use:tippy={{ content: "custom/anything else" }} on:click={(e) => {selectLauncher(e.currentTarget)}} id="custom" class="launcher-button"><span style="font-size: 2.5rem;">?</span></button>
   </div>
 
   {#if selectedLauncher}

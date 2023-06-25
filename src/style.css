@@ -1,3 +1,5 @@
+@import "./tooltip-styles.css";
+
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -29,7 +31,19 @@
   background: rgba(48, 48, 48, 0.6) !important;
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
-  font-size: .8rem !important;
+  font-size: 0.8rem !important;
+}
+
+.blur-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  background: rgba(48, 48, 48, 0.4) !important;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .row {
@@ -75,13 +89,75 @@ button:active {
 }
 
 button:disabled {
-  background-color: rgba(255, 255, 255, .2);
+  background-color: rgba(255, 255, 255, 0.2);
   cursor: unset;
   border: transparent;
 }
 
-::-webkit-scrollbar
-{
-	width: 0;
-	background-color: none;
+::-webkit-scrollbar {
+  display: none;
+}
+
+input[type="range"] {
+  -webkit-appearance: none !important;
+  height: .5rem;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  width: 1.2rem;
+  height: 1.2rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 5rem;
+}
+
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 2rem;
+  height: 1rem;
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+
+.switch input {
+  display: none;
+}
+
+.switch > .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 0.15rem solid rgba(255, 68, 0, 0.5);
+  border-radius: 5rem;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.switch > .slider:before {
+  position: absolute;
+  content: "";
+  height: 1.5rem;
+  width: 1.5rem;
+  left: -.8rem;
+  top: -.55rem;
+  background-color: rgba(44, 44, 44, 0.8);
+  border: 0.15rem solid rgba(255, 68, 0, 0.5);
+  border-radius: 5rem;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.switch > input:checked + .slider {
+  border-color: rgba(37, 148, 81, 0.5);
+}
+
+.switch > input:checked + .slider:before {
+  transform: translateX(1.6rem);
+  border-color: rgba(37, 148, 81, 0.5);
 }

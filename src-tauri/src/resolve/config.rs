@@ -17,6 +17,7 @@ pub fn get_config() -> Result<AppConfig, TinkarosError> {
     Ok(confs)
 }
 
+#[tauri::command]
 pub fn write_config(config: AppConfig) -> Result<AppConfig, TinkarosError> {
     let config_path = path::app_config_dir(&Config::default()).unwrap().join("tinkaros/config.toml");
     if !config_path.is_file() {
