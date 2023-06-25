@@ -16,16 +16,7 @@ impl AppConfig {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResolveData {
-    pub tinkaros: Tinkaros,
     pub modpack: Modpack,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Tinkaros {
-    pub version: String,
-    pub notes: String,
-    pub pub_date: String,
-    pub url: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -62,6 +53,11 @@ impl ResolveData {
         let response = reqwest::get(url).await?.json::<ResolveData>().await?;
         Ok(response)
     }
+}
+
+#[derive(Deserialize)]
+pub struct GithubRelease {
+    pub tag_name: String,
 }
 
 #[derive(Serialize)]

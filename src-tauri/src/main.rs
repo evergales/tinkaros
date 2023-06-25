@@ -7,7 +7,7 @@ pub mod error;
 use std::{fs::{self, File}, path::PathBuf, env::consts, process::Command, time::{SystemTime, UNIX_EPOCH}};
 use error::TinkarosError;
 use serde::{Serialize, Deserialize};
-use resolve::{structs::{AppConfig, ResolveData, Tinkaros, ModIdentifier}, config::{write_config, get_config}};
+use resolve::{structs::{AppConfig, ResolveData, ModIdentifier, GithubRelease}, config::{write_config, get_config}};
 use update::{mods::{update_mods, get_projects_from_ids}, status::{update_progress, update_status}, configs::resolve_configs, structs::CombinedProjects};
 
 use crate::resolve::config::get_launchers;
@@ -140,9 +140,16 @@ fn check_modpack_installed(path: &str) -> Result<bool, TinkarosError> {
 }
 
 #[tauri::command]
-async fn check_tauri_update(app: tauri::AppHandle) -> Result<(bool, Tinkaros), TinkarosError> {
-  let latest = ResolveData::get().await?.tinkaros;
-  Ok((tauri::api::version::is_greater(app.package_info().version.to_string().as_str(), &latest.version).unwrap(), latest))
+async fn check_tauri_update(app: tauri::AppHandle) -> Result<bool, TinkarosError> {
+  let res_str = reqwest::Client::new()
+    .get("https://api.github.com/repos/Hbarniq/tinkaros/releases")
+    .header("User-Agent", "Tinkaros")
+    .send()
+    .await?
+    .text()
+    .await?;
+  let res_json: Vec<GithubRelease> = serde_json::from_str(&res_str)?;
+  Ok(tauri::api::version::is_greater(app.package_info().version.to_string().as_str(), res_json.first().unwrap().tag_name.as_str()).unwrap())
 }
 
 fn main() {

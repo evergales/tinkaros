@@ -24,6 +24,9 @@ pub enum TinkarosError {
     #[error("Failed to fetch file: {0}")]
     Reqwest(#[from] reqwest::Error),
 
+    #[error("unable to parse to json: {0}")]
+    JsonParse(#[from] serde_json::Error),
+
     #[error("unable to extract zip file")]
     ZipResult(#[from] zip::result::ZipError),
 
