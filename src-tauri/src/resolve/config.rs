@@ -7,7 +7,7 @@ use super::structs::{AppConfig, LauncherPath, Launcher};
 
 #[tauri::command]
 pub fn get_config() -> Result<AppConfig, TinkarosError> {
-    let config = path::app_config_dir(&Config::default()).unwrap().join("ahms/config.toml");
+    let config = path::app_config_dir(&Config::default()).unwrap().join("tinkaros/config.toml");
     if !config.is_file() {
         fs::create_dir_all(config.parent().unwrap())?;
         return Ok(AppConfig::default());
@@ -18,7 +18,7 @@ pub fn get_config() -> Result<AppConfig, TinkarosError> {
 }
 
 pub fn write_config(config: AppConfig) -> Result<AppConfig, TinkarosError> {
-    let config_path = path::app_config_dir(&Config::default()).unwrap().join("ahms/config.toml");
+    let config_path = path::app_config_dir(&Config::default()).unwrap().join("tinkaros/config.toml");
     if !config_path.is_file() {
         fs::create_dir_all(config_path.parent().unwrap())?;
         fs::File::create(&config_path).map_err(|_| TinkarosError::ConfigNotFound)?;
@@ -34,7 +34,7 @@ pub async fn get_launchers() -> Vec<Launcher> {
   let mut found: Vec<Launcher> = Vec::new();
 
   if LauncherPath::mclauncher().exists() {
-    let path = path::app_config_dir(&Config::default()).unwrap().join(r"ahms/game");
+    let path = path::app_config_dir(&Config::default()).unwrap().join(r"tinkaros/ahms");
     found.push(Launcher::new("default".to_string(), path.to_string_lossy().to_string()));
   }
 
