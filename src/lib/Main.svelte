@@ -6,7 +6,6 @@
   import { invoke } from "@tauri-apps/api/tauri";
   import { listen } from "@tauri-apps/api/event";
   import { timeSince } from "../scripts/parseTime";
-  import UpdatePopup from "../components/updatePopup.svelte";
   import Progress from "../components/Progress.svelte";
   import ModCard from "../components/ModCard.svelte";
   import ChangelogCard from "../components/ChangelogCard.svelte";
@@ -70,10 +69,6 @@
   })
 </script>
 <main>
-  {#if $state.updatePopup.shown}
-    <UpdatePopup />
-  {/if}
-
   <div id="layout" class="layout-fullscreen">
     <div class="container">
       {#if !$state.updating}

@@ -40,10 +40,10 @@
     </div>
   {/if}
 
-  {#if !$config || $config.init == false}
-    <Welcome />
-  {:else}
+  {#if $config && $config.init}
     <Main />
+  {:else}
+    <Welcome />
   {/if}
 </main>
 
