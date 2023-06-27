@@ -133,6 +133,11 @@
     transition: .2s;
   }
 
+  .launcher-button:disabled {
+    filter: grayscale(60%);
+    background-color: rgba(128, 128, 128, 0.3);
+  }
+
   :global(.launcher-button[value="selected"]) {
     transform: scale(1);
     box-shadow: 0 0 5px 0 rgba(37, 148, 81, 0.2);
