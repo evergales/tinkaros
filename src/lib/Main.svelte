@@ -18,6 +18,7 @@
   let lastUpdated: string | null = null
   let isUpdated = false
   let modlist: Mod[] = []
+  let modlist_limit = 15
   let changelog: { version: string | undefined, description: string | undefined }[] = []
 
   async function update() {
@@ -54,6 +55,24 @@
     })
   }
 
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(async (entry) => {
+      if (entry.isIntersecting) {
+        observer.unobserve(entry.target)
+        await invoke("list_mod_projects", {limit: modlist_limit + 25}).then((res: Mod[]) => {
+          console.log(res.length)
+          if (res.length == 25) {
+            modlist_limit += 25
+            observer.observe(entry.target)
+          } else {
+            entry.target.remove()
+          }
+          modlist = modlist.concat(res)
+          }).catch(err => { newToast("error", "unable to list mods", err); })
+      }
+    });
+  })
+
   onMount(async () => {
     updateVersion()
     initial = await invoke("check_modpack_installed", { path: $config.path }).catch(err => { newToast("error", undefined, err) }) == true ? false : true
@@ -66,8 +85,9 @@
       $state.progress = event.payload.progress
     })
 
-    invoke("list_mod_projects").then((res: Mod[]) => modlist = res).catch(err => { newToast("error", "unable to list mods", err) })
     changelog = JSON.parse(await (await fetch("https://gist.githubusercontent.com/Hbarniq/86838647fb0cc4dce6913d2d73ce7fc4/raw/ahms-changelog.json")).text())
+    await invoke("list_mod_projects", {limit: modlist_limit}).then((res: Mod[]) => modlist = res).catch(err => { newToast("error", "unable to list mods", err) })
+    observer.observe(document.querySelector("#modlist-end"))
   })
 </script>
 <main>
@@ -118,6 +138,9 @@
         {#each modlist as mod}
         <ModCard any_mod={mod} />
         {/each}
+        <div id="modlist-end" style="position: relative; margin-top: 1rem; margin-bottom: 2rem">
+          <Loading />
+        </div>
       {/if}
     </div>
   </div>

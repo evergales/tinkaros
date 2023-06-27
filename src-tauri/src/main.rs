@@ -59,20 +59,34 @@ async fn update(app: tauri::AppHandle, launcher: String, path: String) -> Result
 }
 
 #[tauri::command]
-async fn list_mod_projects(app: tauri::AppHandle) -> Result<Vec<CombinedProjects>, TinkarosError> {
+async fn list_mod_projects(limit: usize, app: tauri::AppHandle) -> Result<Vec<CombinedProjects>, TinkarosError> {
   let data = ResolveData::get().await?;
 
   let mut modrinth_ids: Vec<String> = Vec::new();
   let mut curseforge_ids: Vec<i32> = Vec::new();
 
-  for mod_item in &data.modpack.mods {
+  let lower_bound = std::cmp::max(limit as i32 - 25, 0) as usize;
+  let upper_bound = std::cmp::min(limit, data.modpack.mods.len());
+
+  for mod_item in &data.modpack.mods[lower_bound..upper_bound] {
       match &mod_item.identifier {
           ModIdentifier::ModrinthProject(id) => modrinth_ids.push(id.clone()),
           ModIdentifier::CurseForgeProject(id) => curseforge_ids.push(id.to_owned()),
       }
   }
 
-  let mut result = get_projects_from_ids(modrinth_ids, curseforge_ids, &app).await?;
+  let mut result = match get_projects_from_ids(modrinth_ids, curseforge_ids, &app).await {
+    Ok(res) => Ok(res),
+    Err(err) => {
+      if [lower_bound..upper_bound].len() < 25 {
+        return Ok(Vec::new())
+      }
+
+      Err(err)
+    }
+  }?;
+
+
 
   result.sort_by_key(|project| match project {
     CombinedProjects::ModrinthProject(project) => project.slug.to_owned(),
