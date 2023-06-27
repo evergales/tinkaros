@@ -25,7 +25,7 @@
       <div class="settings-option">
         <span use:tippy={{ content: "whether to check if new updates are available for tinkaros on startup" }} >check for tinkaros updates</span>
         <label class="switch">
-          <input type="checkbox" bind:checked={temp_settings.check_tauri_update}>
+          <input type="checkbox" bind:checked={temp_settings.check_tinkaros_update}>
           <span class="slider"></span>
         </label>
       </div>

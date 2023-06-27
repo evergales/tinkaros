@@ -5,7 +5,7 @@ export type config = {
     launcher: String,
     path: String
     custom: boolean,
-    check_tauri_update: boolean,
+    check_tinkaros_update: boolean,
     max_concurrent_downloads: number,
     bleeding_edge_updates: boolean
 } | any

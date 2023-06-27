@@ -140,7 +140,7 @@ fn check_modpack_installed(path: &str) -> Result<bool, TinkarosError> {
 }
 
 #[tauri::command]
-async fn check_tauri_update(app: tauri::AppHandle) -> Result<bool, TinkarosError> {
+async fn check_tinkaros_update(app: tauri::AppHandle) -> Result<bool, TinkarosError> {
   let res_str = reqwest::Client::new()
     .get("https://api.github.com/repos/Hbarniq/tinkaros/releases")
     .header("User-Agent", "Tinkaros")
@@ -165,7 +165,7 @@ fn main() {
           list_mod_projects, 
           explorer,
           check_modpack_installed,
-          check_tauri_update,
+          check_tinkaros_update,
           check_online
         ])
         .run(tauri::generate_context!())

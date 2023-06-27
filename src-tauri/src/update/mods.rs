@@ -1,54 +1,34 @@
 use std::{path::Path, collections::HashMap, sync::{Arc, Mutex}};
 
+use chrono::{DateTime, Utc};
+use ferinth::structures::version::LatestVersionBody;
 use futures_util::{StreamExt, future::{join_all, join}};
 use reqwest::Client;
 use tokio::{sync::Semaphore, fs::File, io::AsyncWriteExt};
 
-use crate::{resolve::structs::{ResolveData, ModVersion}, error::TinkarosError};
+use crate::{resolve::{structs::{ResolveData, ModVersion, ModIdentifier}, config::get_config}, error::TinkarosError};
 
 use super::{new_modrinth, new_curseforge, status::{update_progress, update_status}, structs::CombinedProjects};
 
 pub async fn update_mods(path: &Path, app: &tauri::AppHandle) -> Result<(), TinkarosError> {
     let path = path.join("mods");
-    let modrinth = new_modrinth(app).unwrap();
-    let curseforge = new_curseforge();
     let data = ResolveData::get().await.map_err(|err| TinkarosError::DataInvalid(err.to_string()))?;
+    let config = get_config()?;
 
-    let mut modrinth_hashes = Vec::new();
-    let mut curseforge_ids = Vec::new();
-
-    for mod_ in data.modpack.mods {
-        match mod_.version {
-            ModVersion::ModrinthVersionHash(hash) => modrinth_hashes.push(hash),
-            ModVersion::CurseForgeVersionId(id) => curseforge_ids.push(id),
-        }
-    }
-
-    let mut to_download = HashMap::new();
-    let mut to_install = HashMap::new();
-
-    for file in curseforge.get_files(curseforge_ids).await.expect("unable to fetch mod versions") {
-        if !file_exists(&file.file_name, &path).await {
-            to_install.insert(file.file_name.clone(), file.download_url.clone().unwrap().to_string());
-        }
-        to_download.insert(file.file_name, file.download_url.unwrap().to_string());
-    };
-
-    for version in modrinth.get_versions_from_hashes(modrinth_hashes).await.expect("unable to fetch mod versions") {
-        for file in version.1.files {
-            if file.primary {
-                if !file_exists(&file.filename, &path).await {
-                    to_install.insert(file.filename.clone(), file.url.clone().to_string());
-                }
-                to_download.insert(file.filename, file.url.to_string());
-            }
-        }
+    let (to_download, to_install) = match config.bleeding_edge_updates {
+      true => get_bleeding_updates(&data, &path, app).await?,
+      false => get_normal_updates(&data, &path, app).await? 
     };
 
     let progress_per_mod = if !to_install.is_empty() {80.0 / to_install.len() as f32} else {0.0};
     let progress = Arc::new(Mutex::new(5.0));
 
-    let semaphore = Arc::new(Semaphore::new(50)); // 50 max concurrent downloads
+    let max_concurrent_downloads: usize = match config.max_concurrent_downloads {
+        10..=85 => config.max_concurrent_downloads.try_into().unwrap(),
+        _ => 75
+    };
+
+    let semaphore = Arc::new(Semaphore::new(max_concurrent_downloads));
     let client = Client::new();
 
     update_status("updating mods", app)?;
@@ -96,7 +76,7 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) -> Result<(), Tink
     Ok(())
 }
 
-async fn file_exists(filename: &str, path: &Path) -> bool {
+fn file_exists(filename: &str, path: &Path) -> bool {
     let file_path = path.join(filename);
     file_path.exists()
 }
@@ -134,4 +114,119 @@ pub async fn get_projects_from_ids(modrinth_ids: Vec<String>, curseforge_ids: Ve
         .collect();
     
     Ok(combined)
+}
+
+async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri::AppHandle) -> Result<(HashMap<String, String>, HashMap<String, String>), TinkarosError> {
+    let modrinth = new_modrinth(app).unwrap();
+    let curseforge = new_curseforge();
+
+    update_status("finding latest mod versions", app)?;
+    
+    let mut modrinth_version_hashes = Vec::new();
+    let mut curseforge_ids = Vec::new();
+
+    for mod_ in &data.modpack.mods {
+        match &mod_.identifier {
+            ModIdentifier::ModrinthProject(_) => match &mod_.version {
+                ModVersion::ModrinthVersionHash(hash) => modrinth_version_hashes.push(hash.to_owned()),
+                ModVersion::CurseForgeVersionId(_) => return Err(TinkarosError::Update("found invalid mod list".to_string())),
+            },
+            ModIdentifier::CurseForgeProject(id) => curseforge_ids.push(id.to_owned())
+        }
+    }
+
+    let latest_modrinth_versions: HashMap<String, String> = modrinth.latest_versions_from_hashes(
+        modrinth_version_hashes,
+        LatestVersionBody {
+            loaders: vec![data.modpack.mod_loader.clone()],
+            game_versions: vec![data.modpack.game_version.clone()],
+        },
+    )
+    .await
+    .map_err(|_| TinkarosError::Update("unable to fetch latest versions".to_string()))?
+    .into_values()
+    .map(|version| {
+        let latest_version = match version.files.len() {
+            1 => version.files[0].to_owned(),
+            _ => version.files.into_iter().find(|file| file.primary).unwrap()
+        };
+
+        (latest_version.filename, latest_version.url.to_string())
+    })
+    .collect();
+
+    let mut latest_curseforge_versions = HashMap::new();
+
+    let mut chars = data.modpack.mod_loader.chars();
+    let mod_loader_capitalized = match chars.next() {
+        None => String::new(),
+        Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
+    };
+
+    // oh god
+    for mod_id in curseforge_ids {
+        let mut compatible_files: HashMap<DateTime<Utc>, (String, String)> = HashMap::new();
+
+        curseforge.get_mod_files(mod_id).await.map_err(|_| TinkarosError::Update("unable to fetch mod versions".to_string()))?
+        .into_iter()
+        .for_each(|file| {
+            if file.is_available && file.game_versions.contains(&mod_loader_capitalized) && file.game_versions.contains(&data.modpack.game_version) {
+                compatible_files.insert(file.file_date, (file.file_name, file.download_url.unwrap().to_string()));
+            }
+        });
+
+        let latest_compatible_file = compatible_files.into_iter().max_by_key(|(datetime, _)| *datetime).unwrap().1;
+
+        latest_curseforge_versions.insert(latest_compatible_file.0, latest_compatible_file.1);
+    }
+
+    let mut to_download: HashMap<String, String> = HashMap::new();
+    let mut to_install: HashMap<String, String> = HashMap::new();
+
+    latest_modrinth_versions.into_iter().chain(latest_curseforge_versions).for_each(|(filename, url)| {
+        if !file_exists(filename.as_str(), mods_path) {
+            to_install.insert(filename.clone(), url.clone());
+        }
+        to_download.insert(filename, url);
+    });
+
+    Ok((to_download, to_install))
+}
+
+async fn get_normal_updates(data: &ResolveData, mods_path: &Path, app: &tauri::AppHandle) -> Result<(HashMap<String, String>, HashMap<String, String>), TinkarosError> {
+    let modrinth = new_modrinth(app).unwrap();
+    let curseforge = new_curseforge();
+
+    let mut modrinth_version_hashes = Vec::new();
+    let mut curseforge_version_ids = Vec::new();
+
+    for mod_ in &data.modpack.mods {
+        match &mod_.version {
+            ModVersion::ModrinthVersionHash(hash) => modrinth_version_hashes.push(hash.to_owned()),
+            ModVersion::CurseForgeVersionId(id) => curseforge_version_ids.push(id.to_owned()),
+        }
+    }
+
+    let mut to_download = HashMap::new();
+    let mut to_install = HashMap::new();
+
+    for file in curseforge.get_files(curseforge_version_ids).await.expect("unable to fetch mod versions") {
+        if !file_exists(&file.file_name, mods_path) {
+            to_install.insert(file.file_name.clone(), file.download_url.clone().unwrap().to_string());
+        }
+        to_download.insert(file.file_name, file.download_url.unwrap().to_string());
+    };
+
+    for version in modrinth.get_versions_from_hashes(modrinth_version_hashes).await.expect("unable to fetch mod versions") {
+        for file in version.1.files {
+            if file.primary {
+                if !file_exists(&file.filename, mods_path) {
+                    to_install.insert(file.filename.clone(), file.url.clone().to_string());
+                }
+                to_download.insert(file.filename, file.url.to_string());
+            }
+        }
+    };
+
+    Ok((to_download, to_install))
 }
