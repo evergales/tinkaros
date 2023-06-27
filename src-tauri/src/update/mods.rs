@@ -155,7 +155,7 @@ async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri:
     })
     .collect();
 
-    let mut latest_curseforge_versions = HashMap::new();
+    let latest_curseforge_versions = Arc::new(Mutex::new(HashMap::new()));
 
     let mut chars = data.modpack.mod_loader.chars();
     let mod_loader_capitalized = match chars.next() {
@@ -163,26 +163,38 @@ async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri:
         Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
     };
 
-    // oh god
+    let mut tasks = Vec::new();
+
     for mod_id in curseforge_ids {
-        let mut compatible_files: HashMap<DateTime<Utc>, (String, String)> = HashMap::new();
+        let latest_curseforge_versions = Arc::clone(&latest_curseforge_versions);
+        let curseforge = curseforge.clone();
+        let mod_loader_capitalized = mod_loader_capitalized.clone();
 
-        curseforge.get_mod_files(mod_id).await.map_err(|_| TinkarosError::Update("unable to fetch mod versions".to_string()))?
-        .into_iter()
-        .for_each(|file| {
-            if file.is_available && file.game_versions.contains(&mod_loader_capitalized) && file.game_versions.contains(&data.modpack.game_version) {
-                compatible_files.insert(file.file_date, (file.file_name, file.download_url.unwrap().to_string()));
-            }
-        });
+        let task = async move {
+            let mut compatible_files: HashMap<DateTime<Utc>, (String, String)> = HashMap::new();
 
-        let latest_compatible_file = compatible_files.into_iter().max_by_key(|(datetime, _)| *datetime).unwrap().1;
+            curseforge.get_mod_files(mod_id).await.map_err(|_| TinkarosError::Update("unable to fetch mod versions".to_string())).unwrap()
+            .into_iter()
+            .for_each(|file| {
+                if file.is_available && file.game_versions.contains(&mod_loader_capitalized) && file.game_versions.contains(&data.modpack.game_version) {
+                    compatible_files.insert(file.file_date, (file.file_name, file.download_url.unwrap().to_string()));
+                }
+            });
+    
+            let latest_compatible_file = compatible_files.into_iter().max_by_key(|(datetime, _)| *datetime).unwrap().1;
+    
+            latest_curseforge_versions.lock().unwrap().insert(latest_compatible_file.0, latest_compatible_file.1);
+        };
 
-        latest_curseforge_versions.insert(latest_compatible_file.0, latest_compatible_file.1);
-    }
+        tasks.push(task);
+    };
+
+    join_all(tasks).await;
 
     let mut to_download: HashMap<String, String> = HashMap::new();
     let mut to_install: HashMap<String, String> = HashMap::new();
 
+    let latest_curseforge_versions = latest_curseforge_versions.lock().unwrap().clone();
     latest_modrinth_versions.into_iter().chain(latest_curseforge_versions).for_each(|(filename, url)| {
         if !file_exists(filename.as_str(), mods_path) {
             to_install.insert(filename.clone(), url.clone());
