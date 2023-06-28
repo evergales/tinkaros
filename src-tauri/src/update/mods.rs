@@ -2,6 +2,7 @@ use std::{path::Path, collections::HashMap, sync::{Arc, Mutex}};
 
 use chrono::{DateTime, Utc};
 use ferinth::structures::version::LatestVersionBody;
+use furse::structures::mod_structs::Mod;
 use futures_util::{StreamExt, future::{join_all, join}};
 use reqwest::Client;
 use tokio::{sync::Semaphore, fs::File, io::AsyncWriteExt};
@@ -103,7 +104,7 @@ pub async fn get_projects_from_ids(modrinth_ids: Vec<String>, curseforge_ids: Ve
     let modrinth_ids_slice = &modrinth_ids.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
 
     let modrinth_future = modrinth.get_multiple_projects(modrinth_ids_slice);
-    let curseforge_future = curseforge.get_mods(curseforge_ids);
+    let curseforge_future = curseforge_get_mods(curseforge_ids, curseforge);
 
     let (modrinth_projects, curseforge_mods) = join(modrinth_future, curseforge_future).await;
 
@@ -114,6 +115,12 @@ pub async fn get_projects_from_ids(modrinth_ids: Vec<String>, curseforge_ids: Ve
         .collect();
     
     Ok(combined)
+}
+
+async fn curseforge_get_mods(ids: Vec<i32>, curseforge: furse::Furse) -> Result<Vec<Mod>, furse::Error> {
+    if !ids.is_empty() {
+        curseforge.get_mods(ids).await
+    } else { Ok(Vec::new()) }
 }
 
 async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri::AppHandle) -> Result<(HashMap<String, String>, HashMap<String, String>), TinkarosError> {

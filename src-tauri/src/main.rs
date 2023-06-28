@@ -75,18 +75,7 @@ async fn list_mod_projects(limit: usize, app: tauri::AppHandle) -> Result<Vec<Co
       }
   }
 
-  let mut result = match get_projects_from_ids(modrinth_ids, curseforge_ids, &app).await {
-    Ok(res) => Ok(res),
-    Err(err) => {
-      if [lower_bound..upper_bound].len() < 25 {
-        return Ok(Vec::new())
-      }
-
-      Err(err)
-    }
-  }?;
-
-
+  let mut result = get_projects_from_ids(modrinth_ids, curseforge_ids, &app).await?;
 
   result.sort_by_key(|project| match project {
     CombinedProjects::ModrinthProject(project) => project.slug.to_owned(),
