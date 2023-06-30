@@ -2,7 +2,6 @@ use std::{path::Path, collections::HashMap, sync::{Arc, Mutex}};
 
 use chrono::{DateTime, Utc};
 use ferinth::structures::version::LatestVersionBody;
-use furse::structures::mod_structs::Mod;
 use futures_util::{StreamExt, future::{join_all, join}};
 use reqwest::Client;
 use tokio::{sync::Semaphore, fs::File, io::AsyncWriteExt};
@@ -110,7 +109,7 @@ pub async fn get_projects_from_ids(modrinth_ids: Vec<String>, curseforge_ids: Ve
             Ok(Vec::new())
         }
     };
-    
+
     let curseforge_future = async {
         if !curseforge_ids.is_empty() {
             curseforge.get_mods(curseforge_ids).await
