@@ -52,10 +52,7 @@
 <style>
   #background {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     z-index: -1;
 
     background-image: url("https://github.com/Hbarniq/ahms/raw/main/assets/backgrounds/3.png");

@@ -128,10 +128,7 @@ input[type="range"]::-webkit-slider-thumb {
 .switch > .slider {
   position: absolute;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.2);
   border: 0.15rem solid rgba(255, 68, 0, 0.5);
   border-radius: 5rem;
