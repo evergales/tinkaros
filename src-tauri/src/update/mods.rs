@@ -1,4 +1,4 @@
-use std::{path::Path, collections::HashMap, sync::{Arc, Mutex}};
+use std::{path::Path, sync::{Arc, Mutex}};
 
 use chrono::{DateTime, Utc};
 use ferinth::structures::version::LatestVersionBody;
@@ -67,7 +67,7 @@ pub async fn update_mods(path: &Path, app: &tauri::AppHandle) -> Result<(), Tink
         let file_path = entry.path();
         file_path.is_file()
             && file_path.extension().map(|ext| ext == "jar").unwrap_or(false)
-            && !to_download.contains_key(file_path.file_name().unwrap().to_str().unwrap())
+            && !to_download.iter().any(|f| f.0 == file_path.file_name().unwrap().to_str().unwrap())
     })
     .for_each(|file| {
         std::fs::remove_file(file.path()).expect("unable to remove file")
@@ -129,7 +129,7 @@ pub async fn get_projects_from_ids(modrinth_ids: Vec<String>, curseforge_ids: Ve
     Ok(combined)
 }
 
-async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri::AppHandle) -> Result<(HashMap<String, String>, HashMap<String, String>), TinkarosError> {
+async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri::AppHandle) -> Result<(Vec<(String, String)>, Vec<(String, String)>), TinkarosError> {
     let modrinth = new_modrinth(app).unwrap();
     let curseforge = new_curseforge();
 
@@ -148,7 +148,7 @@ async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri:
         }
     }
 
-    let latest_modrinth_versions: HashMap<String, String> = modrinth.latest_versions_from_hashes(
+    let latest_modrinth_versions: Vec<(String, String)> = modrinth.latest_versions_from_hashes(
         modrinth_version_hashes,
         LatestVersionBody {
             loaders: vec![data.modpack.mod_loader.clone()],
@@ -168,7 +168,7 @@ async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri:
     })
     .collect();
 
-    let latest_curseforge_versions = Arc::new(Mutex::new(HashMap::new()));
+    let latest_curseforge_versions = Arc::new(Mutex::new(Vec::new()));
 
     let mut chars = data.modpack.mod_loader.chars();
     let mod_loader_capitalized = match chars.next() {
@@ -184,19 +184,19 @@ async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri:
         let mod_loader_capitalized = mod_loader_capitalized.clone();
 
         let task = async move {
-            let mut compatible_files: HashMap<DateTime<Utc>, (String, String)> = HashMap::new();
+            let mut compatible_files: Vec<(DateTime<Utc>, (String, String))> = Vec::new();
 
             curseforge.get_mod_files(mod_id).await.map_err(|_| TinkarosError::Update("unable to fetch mod versions".to_string())).unwrap()
             .into_iter()
             .for_each(|file| {
                 if file.is_available && file.game_versions.contains(&mod_loader_capitalized) && file.game_versions.contains(&data.modpack.game_version) {
-                    compatible_files.insert(file.file_date, (file.file_name, file.download_url.unwrap().to_string()));
+                    compatible_files.push((file.file_date, (file.file_name, file.download_url.unwrap().to_string())));
                 }
             });
     
             let latest_compatible_file = compatible_files.into_iter().max_by_key(|(datetime, _)| *datetime).unwrap().1;
     
-            latest_curseforge_versions.lock().unwrap().insert(latest_compatible_file.0, latest_compatible_file.1);
+            latest_curseforge_versions.lock().unwrap().push((latest_compatible_file.0, latest_compatible_file.1));
         };
 
         tasks.push(task);
@@ -204,21 +204,21 @@ async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri:
 
     join_all(tasks).await;
 
-    let mut to_download: HashMap<String, String> = HashMap::new();
-    let mut to_install: HashMap<String, String> = HashMap::new();
+    let mut to_download: Vec<(String, String)> = Vec::new();
+    let mut to_install: Vec<(String, String)> = Vec::new();
 
     let latest_curseforge_versions = latest_curseforge_versions.lock().unwrap().clone();
     latest_modrinth_versions.into_iter().chain(latest_curseforge_versions).for_each(|(filename, url)| {
         if !file_exists(filename.as_str(), mods_path) {
-            to_install.insert(filename.clone(), url.clone());
+            to_install.push((filename.clone(), url.clone()));
         }
-        to_download.insert(filename, url);
+        to_download.push((filename, url));
     });
 
     Ok((to_download, to_install))
 }
 
-async fn get_normal_updates(data: &ResolveData, mods_path: &Path, app: &tauri::AppHandle) -> Result<(HashMap<String, String>, HashMap<String, String>), TinkarosError> {
+async fn get_normal_updates(data: &ResolveData, mods_path: &Path, app: &tauri::AppHandle) -> Result<(Vec<(String, String)>, Vec<(String, String)>), TinkarosError> {
     let modrinth = new_modrinth(app).unwrap();
     let curseforge = new_curseforge();
 
@@ -232,23 +232,23 @@ async fn get_normal_updates(data: &ResolveData, mods_path: &Path, app: &tauri::A
         }
     }
 
-    let mut to_download = HashMap::new();
-    let mut to_install = HashMap::new();
+    let mut to_download: Vec<(String, String)>  = Vec::new();
+    let mut to_install: Vec<(String, String)>  = Vec::new();
 
     for file in curseforge.get_files(curseforge_version_ids).await.expect("unable to fetch mod versions") {
         if !file_exists(&file.file_name, mods_path) {
-            to_install.insert(file.file_name.clone(), file.download_url.clone().unwrap().to_string());
+            to_install.push((file.file_name.clone(), file.download_url.clone().unwrap().to_string()));
         }
-        to_download.insert(file.file_name, file.download_url.unwrap().to_string());
+        to_download.push((file.file_name, file.download_url.unwrap().to_string()));
     };
 
     for version in modrinth.get_versions_from_hashes(modrinth_version_hashes).await.expect("unable to fetch mod versions") {
         for file in version.1.files {
             if file.primary {
                 if !file_exists(&file.filename, mods_path) {
-                    to_install.insert(file.filename.clone(), file.url.clone().to_string());
+                    to_install.push((file.filename.clone(), file.url.clone().to_string()));
                 }
-                to_download.insert(file.filename, file.url.to_string());
+                to_download.push((file.filename, file.url.to_string()));
             }
         }
     };
