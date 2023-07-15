@@ -6,13 +6,13 @@ use futures_util::{StreamExt, future::{join_all, join}};
 use reqwest::Client;
 use tokio::{sync::Semaphore, fs::File, io::AsyncWriteExt};
 
-use crate::{resolve::{structs::{ResolveData, ModVersion, ModIdentifier}, config::get_config}, error::TinkarosError};
+use crate::{resolve::{structs::{ModVersion, ModIdentifier}, config::get_config}, error::TinkarosError, state::State};
 
 use super::{new_modrinth, new_curseforge, status::{update_progress, update_status}, structs::CombinedProjects};
 
 pub async fn update_mods(path: &Path, app: &tauri::AppHandle) -> Result<(), TinkarosError> {
     let path = path.join("mods");
-    let data = ResolveData::get().await.map_err(|err| TinkarosError::DataInvalid(err.to_string()))?;
+    let data = State::get().await.map_err(|err| TinkarosError::DataInvalid(err.to_string()))?;
     let config = get_config()?;
 
     let (to_download, to_install) = match config.bleeding_edge_updates {
@@ -129,7 +129,7 @@ pub async fn get_projects_from_ids(modrinth_ids: Vec<String>, curseforge_ids: Ve
     Ok(combined)
 }
 
-async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri::AppHandle) -> Result<(Vec<(String, String)>, Vec<(String, String)>), TinkarosError> {
+async fn get_bleeding_updates(data: &State, mods_path: &Path, app: &tauri::AppHandle) -> Result<(Vec<(String, String)>, Vec<(String, String)>), TinkarosError> {
     let modrinth = new_modrinth(app).unwrap();
     let curseforge = new_curseforge();
 
@@ -218,7 +218,7 @@ async fn get_bleeding_updates(data: &ResolveData, mods_path: &Path, app: &tauri:
     Ok((to_download, to_install))
 }
 
-async fn get_normal_updates(data: &ResolveData, mods_path: &Path, app: &tauri::AppHandle) -> Result<(Vec<(String, String)>, Vec<(String, String)>), TinkarosError> {
+async fn get_normal_updates(data: &State, mods_path: &Path, app: &tauri::AppHandle) -> Result<(Vec<(String, String)>, Vec<(String, String)>), TinkarosError> {
     let modrinth = new_modrinth(app).unwrap();
     let curseforge = new_curseforge();
 

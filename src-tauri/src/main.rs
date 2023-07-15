@@ -2,12 +2,14 @@
 
 pub mod update;
 pub mod resolve;
+pub mod state;
 pub mod error;
 
 use std::{fs::{self, File}, path::PathBuf, env::consts, process::Command, time::{SystemTime, UNIX_EPOCH}};
 use error::TinkarosError;
 use serde::{Serialize, Deserialize};
-use resolve::{structs::{AppConfig, ResolveData, ModIdentifier, GithubRelease}, config::{write_config, get_config}};
+use resolve::{structs::{AppConfig, ModIdentifier, GithubRelease}, config::{write_config, get_config}};
+use state::State;
 use update::{mods::{update_mods, get_projects_from_ids}, status::{update_progress, update_status}, configs::resolve_configs, structs::CombinedProjects};
 
 use crate::resolve::config::get_launchers;
@@ -60,7 +62,7 @@ async fn update(app: tauri::AppHandle, launcher: String, path: String) -> Result
 
 #[tauri::command]
 async fn list_mod_projects(limit: usize, app: tauri::AppHandle) -> Result<Vec<CombinedProjects>, TinkarosError> {
-  let data = ResolveData::get().await?;
+  let data = State::get().await?;
 
   let mut modrinth_ids: Vec<String> = Vec::new();
   let mut curseforge_ids: Vec<i32> = Vec::new();
@@ -98,7 +100,7 @@ async fn log_update(path: String) -> Result<(), TinkarosError> {
   let str_file = fs::read_to_string(&file)?;
   let mut data: VersionFile = toml::from_str(&str_file).unwrap_or_default();
 
-  data.version = ResolveData::get().await.unwrap().modpack.version;
+  data.version = State::get().await.unwrap().modpack.version.clone();
   data.last_updated = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
 
   let mut toml_string = toml::to_string(&data).unwrap();
@@ -111,7 +113,7 @@ async fn log_update(path: String) -> Result<(), TinkarosError> {
 #[tauri::command]
 async fn get_version(path: String) -> Result<VersionRes, TinkarosError> {
   let file = PathBuf::from(path).join("version.toml");
-  let latest = ResolveData::get().await?.modpack.version;
+  let latest = State::get().await?.modpack.version.clone();
   
   if file.exists() {
     let str_file = fs::read_to_string(&file)?;

@@ -16,10 +16,6 @@ impl AppConfig {
     pub fn new(init: bool, launcher: String, path: String, check_tinkaros_update: bool, max_concurrent_downloads: i32, bleeding_edge_updates: bool) -> Self { Self { init, launcher, path, check_tinkaros_update, max_concurrent_downloads, bleeding_edge_updates } }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ResolveData {
-    pub modpack: Modpack,
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Modpack {
@@ -47,14 +43,6 @@ pub enum ModVersion {
 pub enum ModIdentifier {
     ModrinthProject(String),
     CurseForgeProject(i32),
-}
-
-impl ResolveData {
-    pub async fn get() -> Result<Self, reqwest::Error> {
-        let url = "https://gist.githubusercontent.com/Hbarniq/ec9d01d863083becd062b378ca01a3d8/raw/ahms.json";
-        let response = reqwest::get(url).await?.json::<ResolveData>().await?;
-        Ok(response)
-    }
 }
 
 #[derive(Deserialize)]

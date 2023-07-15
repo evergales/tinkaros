@@ -6,7 +6,7 @@ use reqwest::Client;
 use serde_json::Map;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 
-use crate::{resolve::structs::{LauncherPath, ResolveData}, get_version, error::TinkarosError};
+use crate::{resolve::structs::LauncherPath, get_version, error::TinkarosError, state::State};
 
 use super::{status::{update_progress, update_status}, structs::{LauncherProfiles, Profile}, mods::download_file, zip_extract};
 
@@ -27,7 +27,7 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
             update_progress(90, app)?;
         }
         if LauncherPath::dotminecraft().join("launcher_profiles.json").exists() {
-            let last_version_id = ResolveData::get().await.map_err(|err| TinkarosError::DataInvalid(err.to_string()))?.modpack.mod_loader_version;
+            let last_version_id = State::get().await.map_err(|err| TinkarosError::DataInvalid(err.to_string()))?.modpack.mod_loader_version.clone();
             let launcher_profiles = fs::read_to_string(LauncherPath::dotminecraft().join("launcher_profiles.json"))?;
 
             if !launcher_profiles.is_empty()  {
@@ -51,7 +51,7 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
                     let writer = fs::OpenOptions::new().read(true).write(true).truncate(true).open(LauncherPath::dotminecraft().join("launcher_profiles.json"))?;
                     serde_json::to_writer_pretty(writer, &launcher_json).map_err(|err| TinkarosError::Unknown(Box::new(err)))?;
                 } else {
-                    let latest_version = ResolveData::get().await.unwrap().modpack.mod_loader_version;
+                    let latest_version = State::get().await.unwrap().modpack.mod_loader_version.clone();
                     if launcher_json.profiles.get("ahms").unwrap().last_version_id != latest_version {
                         launcher_json.profiles.get_mut("ahms").unwrap().last_version_id = latest_version.to_owned();
                         if let Some(ver) = launcher_json.profiles.get_mut("ahms") {
