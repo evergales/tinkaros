@@ -85,7 +85,8 @@
       $state.progress = event.payload.progress
     })
 
-    changelog = JSON.parse(await (await fetch("https://gist.githubusercontent.com/Hbarniq/86838647fb0cc4dce6913d2d73ce7fc4/raw/ahms-changelog.json")).text())
+    var changelog_url: string = await invoke("get_modpack_changelog")
+    changelog = JSON.parse(await (await fetch(changelog_url)).text())
     await invoke("list_mod_projects", {limit: modlist_limit}).then((res: Mod[]) => modlist = res).catch(err => { newToast("error", "unable to list mods", err) })
     observer.observe(document.querySelector("#modlist-end"))
   })

@@ -15,32 +15,34 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
     let ver = get_version(path.to_string_lossy().to_string()).await?;
 
     if ver.version != ver.latest_version {
-        download_file(&client, &path.join("conf.zip"), "https://drive.google.com/uc?export=download&id=1qa7gThngkqNooUweuyVs6Kes8w_pIJ0l&confirm=t").await?;
+        let overrides_url = State::get().await?.modpack.overrides_url.clone();
+        download_file(&client, &path.join("conf.zip"), &overrides_url).await?;
         zip_extract(&path.join("conf.zip"), path).unwrap();
     }
 
     if launcher == "default" {
-        if LauncherPath::dotminecraft().exists() {
+        if LauncherPath::dotminecraft().await.exists() {
             let options = CopyOptions { overwrite: false, skip_exist: true, buffer_size: 64000, copy_inside: false, content_only: false, depth: 0 };
             update_status("installing required versions", app)?;
-            fs_extra::move_items(&[path.join("versions").to_string_lossy().to_string()], LauncherPath::dotminecraft().to_string_lossy().to_string(), &options).ok();
+            fs_extra::move_items(&[path.join("versions").to_string_lossy().to_string()], LauncherPath::dotminecraft().await.to_string_lossy().to_string(), &options).ok();
             update_progress(90, app)?;
         }
-        if LauncherPath::dotminecraft().join("launcher_profiles.json").exists() {
+        if LauncherPath::dotminecraft().await.join("launcher_profiles.json").exists() {
             let last_version_id = State::get().await.map_err(|err| TinkarosError::DataInvalid(err.to_string()))?.modpack.mod_loader_version.clone();
-            let launcher_profiles = fs::read_to_string(LauncherPath::dotminecraft().join("launcher_profiles.json"))?;
+            let launcher_profiles = fs::read_to_string(LauncherPath::dotminecraft().await.join("launcher_profiles.json"))?;
+            let modpack_name = State::get().await?.modpack.name.clone();
 
             if !launcher_profiles.is_empty()  {
                 let mut launcher_json: LauncherProfiles = serde_json::from_str(&launcher_profiles).map_err(|_| TinkarosError::InvalidLauncherConfig)?;
-                if !launcher_json.profiles.contains_key("ahms") {
+                if !launcher_json.profiles.contains_key(&modpack_name) {
                     let mut other = Map::new();
                     other.insert("gameDir".to_string(), serde_json::Value::String(path.to_string_lossy().to_string()));
 
-                    update_status("installing ahms in mc launcher", app)?;
+                    update_status(&format!("installing {} in mc launcher", modpack_name), app)?;
                     launcher_json.profiles.insert(
-                        "ahms".to_string(),
+                        modpack_name.to_string(),
                         Profile {
-                            name: "AHMS".to_owned(),
+                            name: modpack_name.to_owned(),
                             profile_type: "custom".into(),
                             created: Utc::now(),
                             last_version_id,
@@ -48,16 +50,16 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
                             other
                         },
                     );
-                    let writer = fs::OpenOptions::new().read(true).write(true).truncate(true).open(LauncherPath::dotminecraft().join("launcher_profiles.json"))?;
+                    let writer = fs::OpenOptions::new().read(true).write(true).truncate(true).open(LauncherPath::dotminecraft().await.join("launcher_profiles.json"))?;
                     serde_json::to_writer_pretty(writer, &launcher_json).map_err(|err| TinkarosError::Unknown(Box::new(err)))?;
                 } else {
                     let latest_version = State::get().await.unwrap().modpack.mod_loader_version.clone();
-                    if launcher_json.profiles.get("ahms").unwrap().last_version_id != latest_version {
-                        launcher_json.profiles.get_mut("ahms").unwrap().last_version_id = latest_version.to_owned();
-                        if let Some(ver) = launcher_json.profiles.get_mut("ahms") {
+                    if launcher_json.profiles.get(&modpack_name).unwrap().last_version_id != latest_version {
+                        launcher_json.profiles.get_mut(&modpack_name).unwrap().last_version_id = latest_version.to_owned();
+                        if let Some(ver) = launcher_json.profiles.get_mut(&modpack_name) {
                             ver.last_version_id = latest_version
                         }
-                        let writer = fs::OpenOptions::new().read(true).write(true).truncate(true).open(LauncherPath::dotminecraft().join("launcher_profiles.json"))?;
+                        let writer = fs::OpenOptions::new().read(true).write(true).truncate(true).open(LauncherPath::dotminecraft().await.join("launcher_profiles.json"))?;
                         serde_json::to_writer_pretty(writer, &launcher_json).map_err(|err| TinkarosError::Unknown(Box::new(err)))?;
                     }
                 }

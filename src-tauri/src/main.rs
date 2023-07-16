@@ -157,6 +157,12 @@ async fn check_tinkaros_update(app: tauri::AppHandle) -> Result<bool, TinkarosEr
   Ok(tauri::api::version::is_greater(app.package_info().version.to_string().as_str(), res_json.first().unwrap().tag_name.as_str()).unwrap())
 }
 
+#[tauri::command]
+async fn get_modpack_changelog() -> Result<String, TinkarosError> {
+  let changelog = &State::get().await?.modpack.changelog_url;
+  Ok(changelog.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -167,6 +173,7 @@ fn main() {
           update,
           log_update,
           get_version,
+          get_modpack_changelog,
           list_mod_projects, 
           explorer,
           check_modpack_installed,

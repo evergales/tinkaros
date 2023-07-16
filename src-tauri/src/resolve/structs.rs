@@ -2,6 +2,8 @@ use std::{path::PathBuf, env::{consts, var}};
 
 use serde::{Deserialize, Serialize};
 
+use crate::state::State;
+
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct AppConfig {
     pub init: bool,
@@ -19,10 +21,13 @@ impl AppConfig {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Modpack {
+    pub name: String,
     pub version: String,
     pub mod_loader: String,
     pub mod_loader_version: String,
     pub game_version: String,
+    pub overrides_url: String,
+    pub changelog_url: String,
     pub mods: Vec<Mod>,
 }
 
@@ -59,9 +64,10 @@ pub struct Launcher {
 impl Launcher {
     pub fn new(name: String, path: String) -> Self { Self { name, path } }
 }
+
 pub struct LauncherPath;
 impl LauncherPath { // bunch of path declarations
-    pub fn mclauncher() -> PathBuf {
+    pub async fn mclauncher() -> PathBuf {
         match consts::OS {
             "windows" => {
                 let default = PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Minecraft Launcher\MinecraftLauncher.exe");
@@ -72,7 +78,7 @@ impl LauncherPath { // bunch of path declarations
             _ => panic!("incompatible os")
         }
     }
-    pub fn dotminecraft() -> PathBuf {
+    pub async fn dotminecraft() -> PathBuf {
         match consts::OS {
             "windows" => {
                 let case1 = PathBuf::from(var("APPDATA").unwrap()).join(".minecraft");
@@ -83,19 +89,19 @@ impl LauncherPath { // bunch of path declarations
             _ => panic!("incompatible os")
         }
     }
-    pub fn curseforge() -> PathBuf { 
+    pub async fn curseforge() -> PathBuf { 
         match consts::OS {
             "windows" => PathBuf::from(var("programfiles(x86)").unwrap()).join(r"Overwolf\OverwolfLauncher.exe"),
             _ => PathBuf::from("")
         }
     }
-    pub fn curseforge_instance() -> PathBuf { 
+    pub async fn curseforge_instance() -> PathBuf { 
         match consts::OS {
-            "windows" => PathBuf::from(var("USERPROFILE").unwrap()).join(r"curseforge\minecraft\Instances\ahms"),
+            "windows" => PathBuf::from(var("USERPROFILE").unwrap()).join(format!("curseforge/minecraft/Instances/{}", State::get().await.unwrap().modpack.name)),
             _ => PathBuf::from("")
         }
     }
-    pub fn prism() -> PathBuf { 
+    pub async fn prism() -> PathBuf { 
         match consts::OS {
             "windows" => PathBuf::from(var("LOCALAPPDATA").unwrap()).join(r"Programs\PrismLauncher\prismlauncher.exe"),
             "linux" => {
@@ -106,13 +112,17 @@ impl LauncherPath { // bunch of path declarations
             _ => panic!("incompatible os")
         }
     }
-    pub fn prism_instance() -> PathBuf {
+    pub async fn prism_instance() -> PathBuf {
         match consts::OS {
-            "windows" => PathBuf::from(var("APPDATA").unwrap()).join(r"PrismLauncher\instances\ahms\.minecraft"),
+            "windows" => PathBuf::from(var("APPDATA").unwrap()).join(format!("PrismLauncher/instances/{}/.minecraft", State::get().await.unwrap().modpack.name)),
             "linux" => {
                 let def = PathBuf::from(var("HOME").unwrap()).join(".local/share/PrismLauncher/instances");
                 let flatpak = PathBuf::from(var("HOME").unwrap()).join(".var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/instances");
-                if def.exists() { def } else { flatpak }
+                if def.exists() {
+                    def.join(format!("{}/.minecraft", State::get().await.unwrap().modpack.name))
+                } else {
+                    flatpak.join(format!("{}/.minecraft", State::get().await.unwrap().modpack.name))
+                }
             }
             _ => panic!("incompatible os")
         }
