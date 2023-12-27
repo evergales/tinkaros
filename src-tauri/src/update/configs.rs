@@ -18,7 +18,7 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
         let overrides_url = State::get().await?.modpack.overrides_url.clone();
         download_file(&client, &path.join("conf.zip"), &overrides_url).await?;
         zip_extract(&path.join("conf.zip"), path).unwrap();
-    }
+    } else { return Ok(()); }
 
     if launcher == "default" {
         if LauncherPath::dotminecraft().await.exists() {
@@ -68,43 +68,41 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
             update_progress(95, app)?;
         }
     } else if launcher == "curseforge" {
-        if !path.join("minecraftinstance.json").exists() {
-            resolve_lconfigs(path, launcher, app).await?;
-        }
+        let url = &State::get().await?.modpack.launcher_configs.curseforge_url;
+        let text = reqwest::get(url).await?.text().await?;
+        fs::write(path.join("minecraftinstance.json"), text)?;
+        
     } else if launcher == "prism" {
         let prism_main = &mut path.clone();
         prism_main.pop();
-        resolve_lconfigs(prism_main, launcher, app).await?;
+        let url = &State::get().await?.modpack.launcher_configs.prism_url;
+        let text = reqwest::get(url).await?.text().await?;
+        fs::write(prism_main.join("mmc-pack.json"), text)?;
+
+
+        fs::write(
+        prism_main.join("instance.cfg"),
+        format!("InstanceType=OneSix
+        JoinServerOnLaunch=false
+        OverrideCommands=false
+        OverrideConsole=false
+        OverrideGameTime=false
+        OverrideJavaArgs=false
+        OverrideJavaLocation=false
+        OverrideMemory=false
+        OverrideMiscellaneous=false
+        OverrideNativeWorkarounds=false
+        OverridePerformance=false
+        OverrideWindow=false
+        iconKey=default
+        name={}
+        notes=
+        ", State::get().await?.modpack.name))?;
     }
 
     update_status("cleaning up", app)?;
     fs::remove_dir_all(path.join("versions")).ok();
     fs::remove_file(path.join("conf.zip")).ok();
-
-    Ok(())
-}
-
-async fn resolve_lconfigs(path: &PathBuf, ltype: String, app: &tauri::AppHandle) -> Result<(), TinkarosError> {
-    let client = Client::new();
-    if ltype == "curseforge" {
-        update_status("downloading curseforge configs", app)?;
-        download_file(&client, &path.join("curseforge.zip"),"https://drive.google.com/uc?export=download&id=1BKqLWvB287lv6zgGhGp3UOyr6Dy0jeIe&confirm=t").await?;
-        update_progress(90, app)?;
-
-        update_status("extracting configs", app)?;
-        zip_extract(&path.join("curseforge.zip"), path)?;
-        update_progress(95, app)?;
-        fs::remove_file(path.join("curseforge.zip"))?;
-    } else if ltype == "prism" {
-        update_status("downloading prism configs", app)?;
-        download_file(&client, &path.join("prism.zip"), "https://drive.google.com/uc?export=download&id=18r_C-tvMEjcbBUA8TqApOXMkqaR_XFrs&confirm=t").await?;
-        update_progress(90, app)?;
-
-        update_status("extracting configs", app)?;
-        zip_extract(&path.join("prism.zip"), path)?;
-        update_progress(95, app)?;
-        fs::remove_file(path.join("prism.zip"))?;
-    }
 
     Ok(())
 }

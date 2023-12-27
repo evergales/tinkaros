@@ -28,7 +28,14 @@ pub struct Modpack {
     pub game_version: String,
     pub overrides_url: String,
     pub changelog_url: String,
+    pub launcher_configs: StateLauncherConfigs,
     pub mods: Vec<Mod>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct StateLauncherConfigs {
+    pub prism_url: String,
+    pub curseforge_url: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
