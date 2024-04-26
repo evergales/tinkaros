@@ -15,7 +15,7 @@ pub struct State {
 impl State {
     pub async fn get() -> Result<Arc<Self>, TinkarosError> {
         STATE.get_or_try_init(|| async {
-            let default_url = "https://gist.githubusercontent.com/Hbarniq/ec9d01d863083becd062b378ca01a3d8/raw/ahms.json";
+            let default_url = "https://gist.githubusercontent.com/evergales/ec9d01d863083becd062b378ca01a3d8/raw/ahms.json";
 
             let modpack = reqwest::get(default_url).await?.json::<State>().await?.modpack;
 
@@ -23,6 +23,6 @@ impl State {
                 modpack
             }))
             
-        }).await.map(Arc::clone)
+        }).await.cloned()
     }
 }

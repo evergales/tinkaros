@@ -22,7 +22,7 @@
     if ($config.check_tinkaros_update) {
       invoke("check_tinkaros_update").then(async (r: boolean) => {
         if (r) {
-          newToast("info", "update available!", "Tinkaros has a new update available it is recommended you update!", 15000, () => { open("https://github.com/Hbarniq/tinkaros/releases/latest") })
+          newToast("info", "update available!", "Tinkaros has a new update available it is recommended you update!", 15000, () => { open("https://github.com/evergales/tinkaros/releases/latest") })
         }
       }).catch(err => { newToast("error", "unable to find tinkaros updates", err) })
     }
@@ -31,7 +31,7 @@
 </script>
 
 <main>
-  <div id="background" class="full"></div>
+  <div id="background"></div>
   <ToastContainer let:data={data}>
     <BootstrapToast theme="dark" {data} />
   </ToastContainer>
@@ -52,11 +52,22 @@
 <style>
   #background {
     position: absolute;
-    inset: 0;
+    width: 100%;
+    height: 100%;
     z-index: -1;
 
-    background-image: url("https://github.com/Hbarniq/ahms/raw/main/assets/backgrounds/3.png");
-    background-size: cover;
-    filter: blur(3px) brightness(80%);
+    background: radial-gradient(
+      rgba(255, 255, 255, .2) 8%,
+      transparent 8%
+    );
+    background-position: 0% 0%;
+    background-size: 2rem 2rem;
+
+    animation: shift-bg 50s linear infinite;
+  }
+
+  @keyframes shift-bg {
+    from { background-position: 0 0;}
+    to { background-position: 100vw 100vw;}
   }
 </style>
