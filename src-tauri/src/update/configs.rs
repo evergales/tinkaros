@@ -4,7 +4,6 @@ use chrono::Utc;
 use fs_extra::dir::CopyOptions;
 use reqwest::Client;
 use serde_json::Map;
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 
 use crate::{resolve::structs::LauncherPath, get_version, error::TinkarosError, state::State};
 
@@ -46,7 +45,7 @@ pub async fn resolve_configs(app: &tauri::AppHandle, path: &PathBuf, launcher: S
                             profile_type: "custom".into(),
                             created: Utc::now(),
                             last_version_id,
-                            icon: format!("data:image/png;base64,{}", BASE64.encode(reqwest::get("https://cdn.discordapp.com/attachments/1050691362128924743/1112084612060033104/wFc68vW.png").await?.bytes().await?)),
+                            icon: "Furnace".into(),
                             other
                         },
                     );

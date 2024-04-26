@@ -15,7 +15,6 @@ tauri-build = { version = "1.4.0", features = [] }
 
 [dependencies]
 toml = "0.8.2"
-base64 = "0.22.0"
 fs_extra = "1.2.0"
 futures-util = "0.3.25"
 serde_json = "1.0"
