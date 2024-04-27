@@ -57,7 +57,7 @@
     z-index: -1;
 
     background: radial-gradient(
-      rgba(255, 255, 255, .2) 8%,
+      rgba(255, 255, 255, .1) 8%,
       transparent 8%
     );
     background-position: 0% 0%;
